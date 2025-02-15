@@ -15,12 +15,22 @@ struct TodoListAppApp: App {
     init() {
         do {
             let schema = Schema([
-                Item.self
+                Item.self,
+                Category.self
             ])
-            let modelConfiguration = ModelConfiguration(schema: schema)
             
-            container = try ModelContainer(for: schema,
-                                         configurations: modelConfiguration)
+            let modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true
+            )
+            
+            let modelContainer = try ModelContainer(
+                for: schema,
+                configurations: modelConfiguration
+            )
+            
+            self.container = modelContainer
         } catch {
             fatalError("Could not create container: \(error.localizedDescription)")
         }

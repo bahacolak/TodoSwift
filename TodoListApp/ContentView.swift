@@ -4,8 +4,12 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Item.order) private var items: [Item]
+    @Query private var categories: [Category]
     @State private var newItemTitle = ""
     @State private var isEditing = false
+    @State private var selectedCategory: Category?
+    @State private var showingTagSheet = false
+    @State private var selectedItem: Item?
     
     var body: some View {
         NavigationView {
@@ -39,13 +43,37 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
                     
+                    // Category Picker
+                    Picker("Category", selection: $selectedCategory) {
+                        Text("All Categories").tag(nil as Category?)
+                        ForEach(categories, id: \.id) { category in
+                            Text(category.name).tag(category as Category?)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal)
+                    
                     List {
-                        ForEach(items) { item in
+                        ForEach(filteredItems) { item in
                             ItemRow(item: item, toggleCompletion: {
                                 toggleItemCompletion(item)
                             })
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    deleteItem(item)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                
+                                Button {
+                                    selectedItem = item
+                                    showingTagSheet = true
+                                } label: {
+                                    Label("Tags", systemImage: "tag")
+                                }
+                                .tint(.orange)
+                            }
                         }
-                        .onDelete(perform: deleteItems)
                         .onMove(perform: moveItems)
                     }
                     .scrollContentBackground(.hidden)
@@ -62,17 +90,36 @@ struct ContentView: View {
                     EditButton()
                         .foregroundColor(ThemeColors.primary)
                 }
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    NavigationLink(destination: CategoryView()) {
+                        Image(systemName: "folder.badge.plus")
+                            .foregroundColor(ThemeColors.primary)
+                    }
+                }
+            }
+            .sheet(isPresented: $showingTagSheet) {
+                if let item = selectedItem {
+                    TagManagementView(item: item)
+                }
             }
             .foregroundColor(ThemeColors.textPrimary)
         }
         .preferredColorScheme(.light)
     }
     
+    private var filteredItems: [Item] {
+        if let category = selectedCategory {
+            return items.filter { $0.category?.id == category.id }
+        }
+        return items
+    }
+    
     private func addItem() {
         guard !newItemTitle.isEmpty else { return }
         withAnimation {
-            let newOrder = items.count // Yeni öğe için sıra numarası
-            let newItem = Item(title: newItemTitle, order: newOrder)
+            let newOrder = items.count
+            let newItem = Item(title: newItemTitle, order: newOrder, category: selectedCategory)
             modelContext.insert(newItem)
             newItemTitle = ""
         }
@@ -81,6 +128,12 @@ struct ContentView: View {
     private func toggleItemCompletion(_ item: Item) {
         withAnimation {
             item.isCompleted.toggle()
+        }
+    }
+    
+    private func deleteItem(_ item: Item) {
+        withAnimation {
+            modelContext.delete(item)
         }
     }
     
@@ -107,18 +160,44 @@ struct ItemRow: View {
     let toggleCompletion: () -> Void
     
     var body: some View {
-        HStack(spacing: 16) {
-            Button(action: toggleCompletion) {
-                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(item.isCompleted ? ThemeColors.success : ThemeColors.primary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 16) {
+                Button(action: toggleCompletion) {
+                    Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundColor(item.isCompleted ? ThemeColors.success : ThemeColors.primary)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(.system(.body, weight: .medium))
+                        .strikethrough(item.isCompleted)
+                        .foregroundColor(item.isCompleted ? 
+                            ThemeColors.secondary.opacity(0.6) : ThemeColors.textPrimary)
+                    
+                    if let category = item.category {
+                        Text(category.name)
+                            .font(.caption)
+                            .foregroundColor(category.uiColor)
+                    }
+                }
             }
             
-            Text(item.title)
-                .font(.system(.body, weight: .medium))
-                .strikethrough(item.isCompleted)
-                .foregroundColor(item.isCompleted ? 
-                    ThemeColors.secondary.opacity(0.6) : ThemeColors.textPrimary)
+            if !item.tags.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(item.tags, id: \.self) { tag in
+                            Text("#\(tag)")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(ThemeColors.primary.opacity(0.1))
+                                .foregroundColor(ThemeColors.primary)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+            }
         }
         .padding(.vertical, 8)
         .listRowBackground(ThemeColors.surface)

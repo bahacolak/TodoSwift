@@ -4,20 +4,33 @@ import SwiftUI
 
 @Model
 final class Item {
-    @Attribute(.unique) var id: String?
+    @Attribute(.unique) var id: String
     var title: String
     var isCompleted: Bool
     var timestamp: Date
     var priority: Priority
-    var order: Int?
+    var order: Int
+    var tagsList: String = ""  // Store tags as comma-separated string
+    var category: Category?
     
-    init(title: String = "", isCompleted: Bool = false, timestamp: Date = .now, priority: Priority = .normal, order: Int = 0) {
+    var tags: [String] {
+        get {
+            tagsList.isEmpty ? [] : tagsList.components(separatedBy: ",")
+        }
+        set {
+            tagsList = newValue.joined(separator: ",")
+        }
+    }
+    
+    init(title: String = "", isCompleted: Bool = false, timestamp: Date = .now, priority: Priority = .normal, order: Int = 0, tags: [String] = [], category: Category? = nil) {
         self.id = UUID().uuidString
         self.title = title
         self.isCompleted = isCompleted
         self.timestamp = timestamp
         self.priority = priority
         self.order = order
+        self.tags = tags
+        self.category = category
     }
     
     enum Priority: Int, Codable {
