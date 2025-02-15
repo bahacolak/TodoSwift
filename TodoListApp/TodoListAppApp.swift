@@ -1,10 +1,3 @@
-//
-//  TodoListAppApp.swift
-//  TodoListApp
-//
-//  Created by Bahadır Çolak on 14.02.2025.
-//
-
 import SwiftUI
 import SwiftData
 
