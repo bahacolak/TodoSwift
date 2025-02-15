@@ -9,7 +9,8 @@ struct TodoListAppApp: App {
         do {
             let schema = Schema([
                 Item.self,
-                Category.self
+                Category.self,
+                User.self
             ])
             
             let modelConfiguration = ModelConfiguration(
@@ -31,7 +32,7 @@ struct TodoListAppApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashScreenView()
                 .modelContainer(container)
         }
     }
