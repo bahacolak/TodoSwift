@@ -13,99 +13,134 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                ThemeColors.background
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 16) {
-                    HStack(spacing: 12) {
-                        TextField("Add new task", text: $newItemTitle)
-                            .textFieldStyle(.plain)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(ThemeColors.surface)
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            .tint(ThemeColors.primary)
-                            .foregroundColor(ThemeColors.textPrimary)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                        
-                        Button(action: addItem) {
-                            Image(systemName: "plus")
-                                .fontWeight(.semibold)
-                                .foregroundColor(ThemeColors.background)
-                                .frame(width: 42, height: 42)
-                                .background(ThemeColors.primary)
-                                .cornerRadius(12)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    
-                    // Category Picker
-                    Picker("Category", selection: $selectedCategory) {
-                        Text("All Categories").tag(nil as Category?)
-                        ForEach(categories, id: \.id) { category in
-                            Text(category.name).tag(category as Category?)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .padding(.horizontal)
-                    
-                    List {
-                        ForEach(filteredItems) { item in
-                            ItemRow(item: item, toggleCompletion: {
-                                toggleItemCompletion(item)
-                            })
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    deleteItem(item)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                
-                                Button {
-                                    selectedItem = item
-                                    showingTagSheet = true
-                                } label: {
-                                    Label("Tags", systemImage: "tag")
-                                }
-                                .tint(.orange)
-                            }
-                        }
-                        .onMove(perform: moveItems)
-                    }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .listStyle(.plain)
-                }
-            }
-            .navigationTitle("Tasks")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(ThemeColors.background, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                        .foregroundColor(ThemeColors.primary)
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
-                    NavigationLink(destination: CategoryView()) {
-                        Image(systemName: "folder.badge.plus")
-                            .foregroundColor(ThemeColors.primary)
-                    }
-                }
-            }
-            .sheet(isPresented: $showingTagSheet) {
-                if let item = selectedItem {
-                    TagManagementView(item: item)
-                }
-            }
-            .foregroundColor(ThemeColors.textPrimary)
+            mainContent
         }
-        .preferredColorScheme(.light)
+        .preferredColorScheme(.dark)
+    }
+    
+    private var mainContent: some View {
+        ZStack {
+            ThemeColors.background
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                addTaskSection
+                categoryPickerSection
+                taskListSection
+            }
+        }
+        .navigationTitle("Tasks")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                EditButton()
+                    .foregroundColor(.white)
+            }
+            
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink(destination: CategoryView()) {
+                    Image(systemName: "folder.badge.plus")
+                        .foregroundColor(.white)
+                }
+            }
+        }
+        .toolbarBackground(ThemeColors.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .sheet(isPresented: $showingTagSheet) {
+            if let item = selectedItem {
+                TagManagementView(item: item)
+            }
+        }
+        .foregroundStyle(.white)
+    }
+    
+    private var addTaskSection: some View {
+        HStack(spacing: 12) {
+            TextField("Add new task", text: $newItemTitle)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(ThemeColors.surface)
+                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(ThemeColors.primary.opacity(0.1), lineWidth: 1)
+                        )
+                )
+                .tint(ThemeColors.primary)
+                .foregroundColor(ThemeColors.textPrimary)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .animation(.spring(response: 0.3), value: newItemTitle)
+            
+            Button(action: addItem) {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color(red: 52/255, green: 199/255, blue: 89/255), Color(red: 48/255, green: 176/255, blue: 82/255)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+            }
+            .scaleEffect(newItemTitle.isEmpty ? 1 : 1.05)
+            .animation(.spring(response: 0.3), value: newItemTitle.isEmpty)
+        }
+        .padding(.horizontal)
+        .padding(.top, 12)
+    }
+    
+    private var categoryPickerSection: some View {
+        Picker("Category", selection: $selectedCategory) {
+            Text("All Categories")
+                .foregroundColor(.white)
+                .tag(nil as Category?)
+            ForEach(categories, id: \.id) { category in
+                Text(category.name)
+                    .foregroundColor(.white)
+                    .tag(category as Category?)
+            }
+        }
+        .pickerStyle(.menu)
+        .tint(.white)
+        .padding(.horizontal)
+    }
+    
+    private var taskListSection: some View {
+        List {
+            ForEach(filteredItems) { item in
+                ItemRow(item: item, toggleCompletion: {
+                    toggleItemCompletion(item)
+                })
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        deleteItem(item)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    
+                    Button {
+                        selectedItem = item
+                        showingTagSheet = true
+                    } label: {
+                        Label("Tags", systemImage: "tag")
+                    }
+                    .tint(.orange)
+                }
+            }
+            .onMove(perform: moveItems)
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .listStyle(.plain)
     }
     
     private var filteredItems: [Item] {
@@ -160,47 +195,57 @@ struct ItemRow: View {
     let toggleCompletion: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 16) {
-                Button(action: toggleCompletion) {
-                    Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundColor(item.isCompleted ? ThemeColors.success : ThemeColors.primary)
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
-                        .font(.system(.body, weight: .medium))
-                        .strikethrough(item.isCompleted)
-                        .foregroundColor(item.isCompleted ? 
-                            ThemeColors.secondary.opacity(0.6) : ThemeColors.textPrimary)
-                    
-                    if let category = item.category {
-                        Text(category.name)
-                            .font(.caption)
-                            .foregroundColor(category.uiColor)
-                    }
-                }
+        HStack(spacing: 12) {
+            Button(action: toggleCompletion) {
+                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(item.isCompleted ? .white.opacity(0.6) : .white)
+                    .contentShape(Rectangle())
             }
             
-            if !item.tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(item.tags, id: \.self) { tag in
-                            Text("#\(tag)")
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(ThemeColors.primary.opacity(0.1))
-                                .foregroundColor(ThemeColors.primary)
-                                .cornerRadius(8)
+            HStack(spacing: 8) {
+                Text(item.title)
+                    .font(.system(.body, weight: .medium))
+                    .strikethrough(item.isCompleted)
+                    .foregroundColor(item.isCompleted ? 
+                        .white.opacity(0.6) : .white)
+                    .lineLimit(1)
+                
+                if let category = item.category {
+                    Text(category.name)
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(6)
+                }
+                
+                if !item.tags.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 4) {
+                            ForEach(item.tags, id: \.self) { tag in
+                                Text("#\(tag)")
+                                    .font(.caption)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 2)
+                                    .background(Color.white.opacity(0.2))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(4)
+                            }
                         }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 8)
-        .listRowBackground(ThemeColors.surface)
+        .frame(height: 44)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.1))
+        )
+        .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
     }
