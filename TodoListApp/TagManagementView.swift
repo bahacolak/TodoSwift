@@ -85,18 +85,14 @@ struct TagManagementView: View {
         guard !tag.isEmpty else { return }
         
         if !item.tags.contains(tag) {
-            withAnimation {
-                item.tags.append(tag)
-                newTag = ""
-            }
+            item.tags.append(tag)
+            newTag = ""
         }
     }
     
     private func removeTag(_ tag: String) {
         if let index = item.tags.firstIndex(of: tag) {
-            withAnimation {
-                item.tags.remove(at: index)
-            }
+            item.tags.remove(at: index)
         }
     }
 }
