@@ -18,9 +18,15 @@ struct TagManagementView: View {
                             .textFieldStyle(.plain)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(ThemeColors.surface)
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(ThemeColors.surface)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(ThemeColors.primary.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
                             .tint(ThemeColors.primary)
                             .foregroundColor(ThemeColors.textPrimary)
                             .autocorrectionDisabled()
@@ -30,45 +36,65 @@ struct TagManagementView: View {
                         
                         Button(action: addTag) {
                             Image(systemName: "plus")
-                                .fontWeight(.semibold)
-                                .foregroundColor(ThemeColors.background)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
                                 .frame(width: 42, height: 42)
-                                .background(ThemeColors.primary)
-                                .cornerRadius(12)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color(red: 52/255, green: 199/255, blue: 89/255), Color(red: 48/255, green: 176/255, blue: 82/255)]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                         }
                         .disabled(newTag.isEmpty)
+                        .scaleEffect(newTag.isEmpty ? 1 : 1.05)
+                        .animation(.spring(response: 0.3), value: newTag.isEmpty)
                     }
                     .padding(.horizontal)
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                     
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(item.tags, id: \.self) { tag in
-                                HStack {
-                                    Text("#\(tag)")
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 12)
-                                        .background(ThemeColors.surface)
-                                        .cornerRadius(12)
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: { removeTag(tag) }) {
-                                        Image(systemName: "trash")
-                                            .foregroundColor(.red)
-                                            .padding(8)
-                                    }
+                    List {
+                        ForEach(item.tags, id: \.self) { tag in
+                            HStack(spacing: 12) {
+                                Text("#\(tag)")
+                                    .font(.system(.body, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                
+                                Spacer()
+                                
+                                Button(action: { removeTag(tag) }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                        .padding(8)
                                 }
-                                .padding(.horizontal)
                             }
+                            .frame(height: 44)
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.1))
+                            )
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
-                        .padding(.vertical, 8)
                     }
+                    .scrollContentBackground(.hidden)
                     .background(Color.clear)
+                    .listStyle(.plain)
                 }
             }
             .navigationTitle("Manage Tags")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(ThemeColors.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .foregroundStyle(.white)
+            .tint(.white)
+            .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: .white)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
