@@ -35,13 +35,13 @@ struct ContentView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
-                    .foregroundColor(.white)
+                    .foregroundColor(ThemeColors.textPrimary)
             }
             
             ToolbarItem(placement: .navigationBarLeading) {
                 NavigationLink(destination: CategoryView()) {
                     Image(systemName: "folder.badge.plus")
-                        .foregroundColor(.white)
+                        .foregroundColor(ThemeColors.textPrimary)
                 }
             }
         }
@@ -52,7 +52,7 @@ struct ContentView: View {
                 TagManagementView(item: item)
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(ThemeColors.textPrimary)
     }
     
     private var addTaskSection: some View {
@@ -101,16 +101,16 @@ struct ContentView: View {
     private var categoryPickerSection: some View {
         Picker("Category", selection: $selectedCategory) {
             Text("All Categories")
-                .foregroundColor(.white)
+                .foregroundColor(ThemeColors.textPrimary)
                 .tag(nil as Category?)
             ForEach(categories, id: \.id) { category in
                 Text(category.name)
-                    .foregroundColor(.white)
+                    .foregroundColor(ThemeColors.textPrimary)
                     .tag(category as Category?)
             }
         }
         .pickerStyle(.menu)
-        .tint(.white)
+        .tint(ThemeColors.textPrimary)
         .padding(.horizontal)
     }
     
@@ -199,7 +199,7 @@ struct ItemRow: View {
             Button(action: toggleCompletion) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(item.isCompleted ? .white.opacity(0.6) : .white)
+                    .foregroundColor(item.isCompleted ? ThemeColors.textPrimary.opacity(0.6) : ThemeColors.textPrimary)
                     .contentShape(Rectangle())
             }
             
@@ -208,16 +208,16 @@ struct ItemRow: View {
                     .font(.system(.body, weight: .medium))
                     .strikethrough(item.isCompleted)
                     .foregroundColor(item.isCompleted ? 
-                        .white.opacity(0.6) : .white)
+                        ThemeColors.textPrimary.opacity(0.6) : ThemeColors.textPrimary)
                     .lineLimit(1)
                 
                 if let category = item.category {
                     Text(category.name)
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundColor(ThemeColors.textPrimary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Color.white.opacity(0.2))
+                        .background(ThemeColors.surface)
                         .cornerRadius(6)
                 }
                 
@@ -229,8 +229,8 @@ struct ItemRow: View {
                                     .font(.caption)
                                     .padding(.horizontal, 4)
                                     .padding(.vertical, 2)
-                                    .background(Color.white.opacity(0.2))
-                                    .foregroundColor(.white)
+                                    .background(ThemeColors.surface)
+                                    .foregroundColor(ThemeColors.textPrimary)
                                     .cornerRadius(4)
                             }
                         }

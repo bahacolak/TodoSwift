@@ -17,7 +17,7 @@ struct RegisterView: View {
             Text("Register")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(ThemeColors.textPrimary)
             
             VStack(spacing: 15) {
                 TextField("Email", text: $email)
@@ -35,7 +35,7 @@ struct RegisterView: View {
                     Text("Register")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
+                        .background(ThemeColors.primary)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }

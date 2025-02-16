@@ -12,6 +12,7 @@ struct AuthenticationView: View {
             Text("Todo List")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+                .foregroundColor(ThemeColors.textPrimary)
             
             VStack(spacing: 15) {
                 Button(action: {
@@ -20,7 +21,7 @@ struct AuthenticationView: View {
                     Text("Giriş Yap")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(ThemeColors.primary)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
@@ -31,7 +32,7 @@ struct AuthenticationView: View {
                     Text("Kayıt Ol")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
+                        .background(ThemeColors.primary)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
@@ -40,6 +41,7 @@ struct AuthenticationView: View {
             
             Spacer()
         }
+        .background(ThemeColors.background)
         .navigationDestination(isPresented: $showLogin) {
             LoginView()
         }

@@ -14,12 +14,12 @@ struct WelcomeView: View {
                     
                     Text("Welcome to TodoList!")
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.blue)
                         .multilineTextAlignment(.center)
                     
                     Text("Organize, track, and complete your tasks.")
                         .font(.system(size: 18))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.blue.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                     

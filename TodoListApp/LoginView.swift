@@ -17,7 +17,7 @@ struct LoginView: View {
             Text("Login")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(ThemeColors.textPrimary)
             
             VStack(spacing: 15) {
                 TextField("Email", text: $email)
@@ -32,7 +32,7 @@ struct LoginView: View {
                     Text("Login")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(ThemeColors.primary)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
@@ -43,17 +43,17 @@ struct LoginView: View {
             
             VStack(spacing: 8) {
                 Text("Don't have an account?")
-                    .foregroundColor(.white)
+                    .foregroundColor(ThemeColors.textPrimary)
                 
                 Button(action: {
                     showRegister = true
                 }) {
                     Text("Register Now")
                         .fontWeight(.bold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.white)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 16)
-                        .background(Color.white)
+                        .background(ThemeColors.primary)
                         .cornerRadius(8)
                 }
             }
