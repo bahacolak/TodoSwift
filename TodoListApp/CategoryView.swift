@@ -158,4 +158,11 @@ extension View {
             UINavigationBar.appearance().tintColor = UIColor(foregroundColor)
         }
     }
+}
+
+#Preview {
+    NavigationStack {
+        CategoryView()
+            .modelContainer(for: [Category.self, Item.self])
+    }
 } 

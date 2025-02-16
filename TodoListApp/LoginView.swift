@@ -83,4 +83,11 @@ struct LoginView: View {
             showAlert = true
         }
     }
+}
+
+#Preview {
+    NavigationStack {
+        LoginView()
+            .modelContainer(for: User.self)
+    }
 } 

@@ -37,4 +37,9 @@ struct SplashScreenView: View {
             }
         }
     }
+}
+
+#Preview {
+    SplashScreenView()
+        .modelContainer(for: [User.self, Category.self, Item.self])
 } 

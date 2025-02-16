@@ -83,4 +83,11 @@ struct RegisterView: View {
         isRegistered = true
         showAlert = true
     }
+}
+
+#Preview {
+    NavigationStack {
+        RegisterView()
+            .modelContainer(for: User.self)
+    }
 } 
