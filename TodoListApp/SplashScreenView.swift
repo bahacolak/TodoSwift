@@ -9,7 +9,7 @@ struct SplashScreenView: View {
     var body: some View {
         NavigationStack {
             if isActive {
-                AuthenticationView()
+                WelcomeView()
             } else {
                 VStack {
                     VStack {

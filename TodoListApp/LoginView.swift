@@ -14,9 +14,10 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Giriş Yap")
+            Text("Login")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+                .foregroundColor(.white)
             
             VStack(spacing: 15) {
                 TextField("Email", text: $email)
@@ -24,11 +25,11 @@ struct LoginView: View {
                     .autocapitalization(.none)
                     .keyboardType(.emailAddress)
                 
-                SecureField("Şifre", text: $password)
+                SecureField("Password", text: $password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 Button(action: login) {
-                    Text("Giriş Yap")
+                    Text("Login")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
@@ -40,23 +41,28 @@ struct LoginView: View {
             
             Spacer()
             
-            HStack(spacing: 8) {
-                Text("Hesabınız yok mu?")
-                    .foregroundColor(.gray)
+            VStack(spacing: 8) {
+                Text("Don't have an account?")
+                    .foregroundColor(.white)
                 
                 Button(action: {
                     showRegister = true
                 }) {
-                    Text("Kayıt Olun")
+                    Text("Register Now")
                         .fontWeight(.bold)
                         .foregroundColor(.blue)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(Color.white)
+                        .cornerRadius(8)
                 }
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, 32)
         }
         .padding(.top, 50)
-        .alert("Hata", isPresented: $showAlert) {
-            Button("Tamam", role: .cancel) { }
+        .background(ThemeColors.background)
+        .alert("Error", isPresented: $showAlert) {
+            Button("OK", role: .cancel) { }
         } message: {
             Text(alertMessage)
         }
@@ -70,16 +76,16 @@ struct LoginView: View {
     
     private func login() {
         guard !email.isEmpty, !password.isEmpty else {
-            alertMessage = "Lütfen email ve şifre alanlarını doldurun."
+            alertMessage = "Please fill in all fields."
             showAlert = true
             return
         }
         
         if users.first(where: { $0.email == email && $0.password == password }) != nil {
-            currentUserEmail = email // Store the current user's email
+            currentUserEmail = email
             isLoggedIn = true
         } else {
-            alertMessage = "Email veya şifre hatalı."
+            alertMessage = "Invalid email or password."
             showAlert = true
         }
     }

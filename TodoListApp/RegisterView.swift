@@ -3,6 +3,7 @@ import SwiftData
 
 struct RegisterView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query private var users: [User]
     @State private var email = ""
     @State private var password = ""
@@ -13,9 +14,10 @@ struct RegisterView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Kayıt Ol")
+            Text("Register")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+                .foregroundColor(.white)
             
             VStack(spacing: 15) {
                 TextField("Email", text: $email)
@@ -23,14 +25,14 @@ struct RegisterView: View {
                     .autocapitalization(.none)
                     .keyboardType(.emailAddress)
                 
-                SecureField("Şifre", text: $password)
+                SecureField("Password", text: $password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
-                SecureField("Şifre Tekrar", text: $confirmPassword)
+                SecureField("Confirm Password", text: $confirmPassword)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 Button(action: register) {
-                    Text("Kayıt Ol")
+                    Text("Register")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.green)
@@ -43,13 +45,11 @@ struct RegisterView: View {
             Spacer()
         }
         .padding(.top, 50)
-        .alert("Bilgi", isPresented: $showAlert) {
-            Button("Tamam", role: .cancel) { 
+        .background(ThemeColors.background)
+        .alert("Info", isPresented: $showAlert) {
+            Button("OK", role: .cancel) { 
                 if isRegistered {
-                    // Navigate back to login
-                    email = ""
-                    password = ""
-                    confirmPassword = ""
+                    dismiss()
                 }
             }
         } message: {
@@ -59,19 +59,19 @@ struct RegisterView: View {
     
     private func register() {
         guard !email.isEmpty, !password.isEmpty, !confirmPassword.isEmpty else {
-            alertMessage = "Lütfen tüm alanları doldurun."
+            alertMessage = "Please fill in all fields."
             showAlert = true
             return
         }
         
         guard password == confirmPassword else {
-            alertMessage = "Şifreler eşleşmiyor."
+            alertMessage = "Passwords do not match."
             showAlert = true
             return
         }
         
         guard !users.contains(where: { $0.email == email }) else {
-            alertMessage = "Bu email adresi zaten kayıtlı."
+            alertMessage = "This email is already registered."
             showAlert = true
             return
         }
@@ -79,7 +79,7 @@ struct RegisterView: View {
         let user = User(email: email, password: password)
         modelContext.insert(user)
         
-        alertMessage = "Kayıt başarılı! Giriş yapabilirsiniz."
+        alertMessage = "Registration successful! You can now login."
         isRegistered = true
         showAlert = true
     }
