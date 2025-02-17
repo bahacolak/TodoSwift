@@ -12,7 +12,7 @@ struct ContentView: View {
     @State private var selectedItem: Item?
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             mainContent
         }
         .preferredColorScheme(.dark)
@@ -29,9 +29,8 @@ struct ContentView: View {
                 taskListSection
             }
         }
-        .navigationTitle("Tasks")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .navigationTitle(Text("Tasks"))
+        .toolbarBackground(ThemeColors.background, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
@@ -45,14 +44,13 @@ struct ContentView: View {
                 }
             }
         }
-        .toolbarBackground(ThemeColors.background, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
         .sheet(isPresented: $showingTagSheet) {
             if let item = selectedItem {
                 TagManagementView(item: item)
             }
         }
         .foregroundStyle(ThemeColors.textPrimary)
+        .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: ThemeColors.textPrimary)
     }
     
     private var addTaskSection: some View {
@@ -83,7 +81,7 @@ struct ContentView: View {
                     .frame(width: 42, height: 42)
                     .background(
                         LinearGradient(
-                            gradient: Gradient(colors: [Color(red: 52/255, green: 199/255, blue: 89/255), Color(red: 48/255, green: 176/255, blue: 82/255)]),
+                            gradient: Gradient(colors: [Color(red: 59/255, green: 130/255, blue: 246/255), Color(red: 37/255, green: 99/255, blue: 235/255)]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

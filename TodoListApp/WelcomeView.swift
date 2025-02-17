@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WelcomeView: View {
-    @State private var showLogin = false
+    @State private var showMainApp = false
     
     var body: some View {
         NavigationStack {
@@ -26,7 +26,7 @@ struct WelcomeView: View {
                     Spacer()
                     
                     Button(action: {
-                        showLogin = true
+                        showMainApp = true
                     }) {
                         Text("Get Started")
                             .font(.system(size: 18, weight: .semibold))
@@ -35,7 +35,7 @@ struct WelcomeView: View {
                             .padding()
                             .background(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color(red: 52/255, green: 199/255, blue: 89/255), Color(red: 48/255, green: 176/255, blue: 82/255)]),
+                                    gradient: Gradient(colors: [Color(red: 59/255, green: 130/255, blue: 246/255), Color(red: 37/255, green: 99/255, blue: 235/255)]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -46,9 +46,9 @@ struct WelcomeView: View {
                     .padding(.bottom, 50)
                 }
             }
-            .navigationDestination(isPresented: $showLogin) {
-                LoginView()
-            }
+        }
+        .fullScreenCover(isPresented: $showMainApp) {
+            ContentView()
         }
     }
 }

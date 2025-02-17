@@ -42,7 +42,7 @@ struct CategoryView: View {
                             .frame(width: 42, height: 42)
                             .background(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color(red: 52/255, green: 199/255, blue: 89/255), Color(red: 48/255, green: 176/255, blue: 82/255)]),
+                                    gradient: Gradient(colors: [Color(red: 59/255, green: 130/255, blue: 246/255), Color(red: 37/255, green: 99/255, blue: 235/255)]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )

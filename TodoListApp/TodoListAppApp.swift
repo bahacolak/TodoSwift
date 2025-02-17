@@ -9,8 +9,7 @@ struct TodoListAppApp: App {
         do {
             let schema = Schema([
                 Item.self,
-                Category.self,
-                User.self
+                Category.self
             ])
             
             let modelConfiguration = ModelConfiguration(
