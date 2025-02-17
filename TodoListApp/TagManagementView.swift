@@ -5,6 +5,7 @@ struct TagManagementView: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var item: Item
     @State private var newTag = ""
+    @State private var isLoading = true
     
     var body: some View {
         NavigationView {
@@ -56,36 +57,20 @@ struct TagManagementView: View {
                     .padding(.horizontal)
                     .padding(.top, 12)
                     
-                    List {
-                        ForEach(item.tags, id: \.self) { tag in
-                            HStack(spacing: 12) {
-                                Text("#\(tag)")
-                                    .font(.system(.body, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .lineLimit(1)
-                                
-                                Spacer()
-                                
-                                Button(action: { removeTag(tag) }) {
-                                    Image(systemName: "trash")
-                                        .foregroundColor(.red)
-                                        .padding(8)
-                                }
+                    if isLoading {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        List {
+                            ForEach(item.tags, id: \.self) { tag in
+                                TagRowView(tag: tag, onDelete: { removeTag(tag) })
                             }
-                            .frame(height: 44)
-                            .padding(.horizontal, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.1))
-                            )
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: item.tags)
                         }
+                        .scrollContentBackground(.hidden)
+                        .background(Color.clear)
+                        .listStyle(.plain)
                     }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .listStyle(.plain)
                 }
             }
             .navigationTitle("Manage Tags")
@@ -102,6 +87,11 @@ struct TagManagementView: View {
                     }
                     .foregroundColor(ThemeColors.primary)
                 }
+            }
+            .task {
+                // Simulate a very short delay to ensure SwiftData is ready
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                isLoading = false
             }
         }
     }
@@ -120,6 +110,39 @@ struct TagManagementView: View {
         if let index = item.tags.firstIndex(of: tag) {
             item.tags.remove(at: index)
         }
+    }
+}
+
+// Separate view for better performance
+struct TagRowView: View {
+    let tag: String
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("#\(tag)")
+                .font(.system(.body, weight: .medium))
+                .foregroundColor(.white)
+                .lineLimit(1)
+            
+            Spacer()
+            
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+                    .padding(8)
+            }
+        }
+        .frame(height: 44)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.1))
+        )
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        .transition(.opacity.combined(with: .move(edge: .trailing)))
     }
 }
 

@@ -10,12 +10,17 @@ struct ContentView: View {
     @State private var selectedCategory: Category?
     @State private var showingTagSheet = false
     @State private var selectedItem: Item?
+    @State private var isDataLoaded = false
     
     var body: some View {
         NavigationStack {
             mainContent
         }
         .preferredColorScheme(.dark)
+        .task {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            isDataLoaded = true
+        }
     }
     
     private var mainContent: some View {
@@ -44,9 +49,16 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingTagSheet) {
-            if let item = selectedItem {
+        .sheet(isPresented: $showingTagSheet, onDismiss: {
+            withAnimation {
+                selectedItem = nil
+            }
+        }) {
+            if let item = selectedItem, isDataLoaded {
                 TagManagementView(item: item)
+                    .onDisappear {
+                        selectedItem = nil
+                    }
             }
         }
         .foregroundStyle(ThemeColors.textPrimary)
@@ -126,8 +138,13 @@ struct ContentView: View {
                     }
                     
                     Button {
-                        selectedItem = item
-                        showingTagSheet = true
+                        withAnimation {
+                            selectedItem = nil  // Reset first
+                            DispatchQueue.main.async {
+                                selectedItem = item
+                                showingTagSheet = true
+                            }
+                        }
                     } label: {
                         Label("Tags", systemImage: "tag")
                     }

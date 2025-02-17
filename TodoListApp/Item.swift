@@ -10,17 +10,8 @@ final class Item {
     var timestamp: Date
     var priority: Priority
     var order: Int
-    var tagsList: String = ""  // Store tags as comma-separated string
+    var tags: [String] = []  // Store tags directly as array
     var category: Category?
-    
-    var tags: [String] {
-        get {
-            tagsList.isEmpty ? [] : tagsList.components(separatedBy: ",")
-        }
-        set {
-            tagsList = newValue.joined(separator: ",")
-        }
-    }
     
     init(title: String = "", isCompleted: Bool = false, timestamp: Date = .now, priority: Priority = .normal, order: Int = 0, tags: [String] = [], category: Category? = nil) {
         self.id = UUID().uuidString
