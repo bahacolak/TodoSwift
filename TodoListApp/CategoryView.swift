@@ -42,7 +42,7 @@ struct CategoryView: View {
                             .frame(width: 42, height: 42)
                             .background(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color(red: 59/255, green: 130/255, blue: 246/255), Color(red: 37/255, green: 99/255, blue: 235/255)]),
+                                    gradient: Gradient(colors: [ThemeColors.primary, ThemeColors.primary.opacity(0.8)]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -66,7 +66,7 @@ struct CategoryView: View {
                             HStack(spacing: 8) {
                                 Text(category.name)
                                     .font(.system(.body, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(ThemeColors.textPrimary)
                                     .lineLimit(1)
                                 
                                 Spacer()
@@ -75,9 +75,13 @@ struct CategoryView: View {
                                     .font(.caption)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.white.opacity(0.2))
-                                    .foregroundColor(.white)
+                                    .background(ThemeColors.surface)
+                                    .foregroundColor(ThemeColors.textPrimary)
                                     .cornerRadius(6)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(ThemeColors.divider, lineWidth: 1)
+                                    )
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -85,7 +89,8 @@ struct CategoryView: View {
                         .padding(.horizontal, 12)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(0.1))
+                                .fill(ThemeColors.surface)
+                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                         )
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -102,9 +107,9 @@ struct CategoryView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbarBackground(ThemeColors.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .foregroundStyle(.white)
-        .tint(.white)
-        .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: .white)
+        .foregroundStyle(ThemeColors.textPrimary)
+        .tint(ThemeColors.primary)
+        .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: ThemeColors.textPrimary)
     }
     
     private func addCategory() {

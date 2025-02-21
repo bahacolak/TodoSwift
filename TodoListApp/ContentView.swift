@@ -16,7 +16,6 @@ struct ContentView: View {
         NavigationStack {
             mainContent
         }
-        .preferredColorScheme(.dark)
         .task {
             try? await Task.sleep(nanoseconds: 100_000_000)
             isDataLoaded = true
@@ -245,8 +244,12 @@ struct ItemRow: View {
                                     .padding(.horizontal, 4)
                                     .padding(.vertical, 2)
                                     .background(ThemeColors.surface)
-                                    .foregroundColor(ThemeColors.textPrimary)
+                                    .foregroundColor(ThemeColors.primary)
                                     .cornerRadius(4)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(ThemeColors.primary.opacity(0.3), lineWidth: 1)
+                                    )
                             }
                         }
                     }

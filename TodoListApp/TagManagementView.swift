@@ -89,7 +89,6 @@ struct TagManagementView: View {
                 }
             }
             .task {
-                // Simulate a very short delay to ensure SwiftData is ready
                 try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
                 isLoading = false
             }
@@ -122,7 +121,7 @@ struct TagRowView: View {
         HStack(spacing: 12) {
             Text("#\(tag)")
                 .font(.system(.body, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundColor(ThemeColors.textPrimary)
                 .lineLimit(1)
             
             Spacer()
@@ -137,7 +136,8 @@ struct TagRowView: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.1))
+                .fill(ThemeColors.surface)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         )
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
