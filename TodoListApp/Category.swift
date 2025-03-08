@@ -3,42 +3,44 @@ import SwiftData
 import SwiftUI
 
 @Model
-final class Category {
-    var id: String
+class Category {
     var name: String
-    var color: String // Store color as a hex string
-    @Relationship(inverse: \Item.category) var items: [Item]
+    var color: String
+    var items: [Item]?
     
-    init(name: String, color: String = "#007AFF") {
-        self.id = UUID().uuidString
+    init(name: String, color: String) {
         self.name = name
         self.color = color
-        self.items = []
     }
     
     var uiColor: Color {
-        Color(hex: color) ?? .blue
+        Color(hex: color)
     }
 }
 
-// Color extension to support hex colors
+// Helper extension for hex colors - Single source of truth
 extension Color {
-    init?(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-        
-        var rgb: UInt64 = 0
-        
-        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
-            return nil
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
         }
-        
         self.init(
             .sRGB,
-            red: Double((rgb & 0xFF0000) >> 16) / 255.0,
-            green: Double((rgb & 0x00FF00) >> 8) / 255.0,
-            blue: Double(rgb & 0x0000FF) / 255.0,
-            opacity: 1.0
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            opacity: Double(a) / 255
         )
     }
 } 

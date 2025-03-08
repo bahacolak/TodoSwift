@@ -77,9 +77,8 @@ struct TagManagementView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(ThemeColors.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .foregroundStyle(.white)
+            .foregroundColor(.white)
             .tint(.white)
-            .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: .white)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
