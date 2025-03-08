@@ -3,343 +3,443 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Item.order) private var items: [Item]
+    @Query private var items: [Item]
     @Query private var categories: [Category]
-    @State private var newItemTitle = ""
-    @State private var isEditing = false
-    @State private var selectedCategory: Category?
-    @State private var showingTagSheet = false
-    @State private var selectedItem: Item?
-    @State private var isDataLoaded = false
-    @State private var showAddTask = false
+    @State private var selectedDate = Date()
+    @State private var showingAddTask = false
+    
+    init(searchDate: Date = Date()) {
+        self.selectedDate = searchDate
+        _items = Query()
+    }
+    
+    private let calendar = Calendar.current
+    private let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h a"
+        return formatter
+    }()
+    
+    // Filter tasks for selected date
+    private var tasksForSelectedDate: [Item] {
+        items.filter { item in
+            guard let startTime = item.startTime else { return false }
+            return calendar.isDate(startTime, inSameDayAs: selectedDate)
+        }
+        .sorted { ($0.startTime ?? Date()) < ($1.startTime ?? Date()) }
+    }
     
     var body: some View {
         NavigationStack {
-            mainContent
-        }
-        .task {
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            isDataLoaded = true
-        }
-    }
-    
-    private var mainContent: some View {
-        ZStack {
-            ThemeColors.background
-                .ignoresSafeArea()
-            
-            VStack(spacing: 16) {
-                if showAddTask {
-                    addTaskSection
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
+            ZStack {
+                Color(uiColor: .systemBackground)
+                    .ignoresSafeArea()
                 
-                categoryPickerSection
-                taskListSection
-            }
-            
-            // Floating Action Button
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        withAnimation(.spring(duration: 0.6)) {
-                            showAddTask.toggle()
-                        }
-                    }) {
-                        Image(systemName: showAddTask ? "xmark" : "plus")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
-                            .background(
-                                Circle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [ThemeColors.primary, ThemeColors.accent],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                            )
-                            .shadow(color: ThemeColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
-                    }
-                    .rotationEffect(.degrees(showAddTask ? 45 : 0))
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 20)
-                }
-            }
-        }
-        .navigationTitle("Tasks")
-        .toolbarBackground(ThemeColors.background, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                EditButton()
-                    .foregroundColor(ThemeColors.primary)
-            }
-            
-            ToolbarItem(placement: .navigationBarLeading) {
-                NavigationLink(destination: CategoryView()) {
-                    Image(systemName: "folder.badge.plus")
-                        .foregroundColor(ThemeColors.primary)
-                }
-            }
-        }
-        .sheet(isPresented: $showingTagSheet) {
-            if let item = selectedItem, isDataLoaded {
-                TagManagementView(item: item)
-                    .onDisappear {
-                        selectedItem = nil
-                    }
-            }
-        }
-    }
-    
-    private var addTaskSection: some View {
-        HStack(spacing: 12) {
-            TextField("Add new task", text: $newItemTitle)
-                .textFieldStyle(.plain)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(ThemeColors.surface)
-                        .shadow(color: ThemeColors.primary.opacity(0.1), radius: 8, x: 0, y: 4)
-                )
-                .tint(ThemeColors.primary)
-                .foregroundColor(ThemeColors.textPrimary)
-                .submitLabel(.done)
-                .onSubmit {
-                    if !newItemTitle.isEmpty {
-                        addItem()
-                    }
-                }
-        }
-        .padding(.horizontal)
-        .padding(.top, 12)
-    }
-    
-    private var categoryPickerSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                CategoryChip(name: "All", isSelected: selectedCategory == nil) {
-                    withAnimation {
-                        selectedCategory = nil
-                    }
-                }
-                
-                ForEach(categories) { category in
-                    CategoryChip(
-                        name: category.name,
-                        color: category.uiColor,
-                        isSelected: selectedCategory?.id == category.id
-                    ) {
-                        withAnimation {
-                            selectedCategory = category
+                VStack(spacing: 0) {
+                    // Calendar Week Strip
+                    CalendarStripView(selectedDate: $selectedDate)
+                        .padding(.top)
+                    
+                    // Scheduled Reminders
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Scheduled Reminders:")
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                                .padding(.horizontal)
+                                .padding(.top)
+                            
+                            TimelineView(items: tasksForSelectedDate)
                         }
                     }
+                    
+                    // Bottom Navigation Bar
+                    BottomNavBar(showingAddTask: $showingAddTask)
+                }
+            }
+            .navigationTitle("Today's Reminders")
+            .sheet(isPresented: $showingAddTask) {
+                AddTaskView(isPresented: $showingAddTask, modelContext: modelContext)
+            }
+        }
+    }
+}
+
+struct CalendarStripView: View {
+    @Binding var selectedDate: Date
+    private let calendar = Calendar.current
+    private let daysToShow = 7
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Button(action: { moveMonth(by: -1) }) {
+                    Image(systemName: "chevron.left")
+                }
+                
+                Text(monthYearString)
+                    .font(.headline)
+                
+                Button(action: { moveMonth(by: 1) }) {
+                    Image(systemName: "chevron.right")
                 }
             }
             .padding(.horizontal)
-        }
-    }
-    
-    private var taskListSection: some View {
-        List {
-            ForEach(filteredItems) { item in
-                ItemRow(item: item, toggleCompletion: {
-                    toggleItemCompletion(item)
-                })
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) {
-                        withAnimation {
-                            deleteItem(item)
-                        }
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    
-                    Button {
-                        withAnimation {
-                            selectedItem = nil
-                            DispatchQueue.main.async {
-                                selectedItem = item
-                                showingTagSheet = true
-                            }
-                        }
-                    } label: {
-                        Label("Tags", systemImage: "tag")
-                    }
-                    .tint(ThemeColors.accent)
-                }
-                .listRowBackground(ThemeColors.surface)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-            }
-            .onMove(perform: moveItems)
-        }
-        .scrollContentBackground(.hidden)
-        .background(Color.clear)
-        .listStyle(.plain)
-        .overlay {
-            if filteredItems.isEmpty {
-                ContentUnavailableView(
-                    label: {
-                        Label(
-                            selectedCategory == nil ? "No Tasks" : "No Tasks in Category",
-                            systemImage: "checkmark.circle"
-                        )
-                    },
-                    description: {
-                        Text(selectedCategory == nil ? "Add a new task to get started" : "Add a task to this category")
-                    }
-                )
-            }
-        }
-    }
-    
-    private var filteredItems: [Item] {
-        if let category = selectedCategory {
-            return items.filter { $0.category?.id == category.id }
-        }
-        return items
-    }
-    
-    private func addItem() {
-        guard !newItemTitle.isEmpty else { return }
-        withAnimation {
-            let newOrder = items.count
-            let newItem = Item(title: newItemTitle, order: newOrder, category: selectedCategory)
-            modelContext.insert(newItem)
-            newItemTitle = ""
             
-            if showAddTask {
-                showAddTask = false
-            }
-        }
-    }
-    
-    private func toggleItemCompletion(_ item: Item) {
-        withAnimation(.spring(duration: 0.3)) {
-            item.isCompleted.toggle()
-        }
-    }
-    
-    private func deleteItem(_ item: Item) {
-        modelContext.delete(item)
-    }
-    
-    private func moveItems(from source: IndexSet, to destination: Int) {
-        var updatedItems = items.map { $0 }
-        updatedItems.move(fromOffsets: source, toOffset: destination)
-        
-        for (index, item) in updatedItems.enumerated() {
-            item.order = index
-        }
-    }
-}
-
-struct CategoryChip: View {
-    let name: String
-    var color: Color = ThemeColors.primary
-    var isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(name)
-                .font(.system(.subheadline, weight: .medium))
-                .foregroundColor(isSelected ? .white : ThemeColors.textPrimary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(isSelected ? color : ThemeColors.surface)
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(color, lineWidth: isSelected ? 0 : 1)
-                )
-        }
-    }
-}
-
-struct ItemRow: View {
-    let item: Item
-    let toggleCompletion: () -> Void
-    @State private var offset: CGFloat = 1000
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Button(action: toggleCompletion) {
-                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundColor(item.isCompleted ? ThemeColors.success : ThemeColors.textSecondary)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
-                    .font(.system(.body))
-                    .foregroundColor(ThemeColors.textPrimary)
-                    .strikethrough(item.isCompleted)
-                
-                if !item.tags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(item.tags, id: \.self) { tag in
-                                Text("#\(tag)")
-                                    .font(.system(.caption, weight: .medium))
-                                    .foregroundColor(ThemeColors.primary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(getDays(), id: \.self) { date in
+                        DayCell(date: date, isSelected: calendar.isDate(date, inSameDayAs: selectedDate))
+                            .onTapGesture {
+                                withAnimation {
+                                    selectedDate = date
+                                }
                             }
-                        }
                     }
                 }
-            }
-            
-            Spacer()
-            
-            if let category = item.category {
-                Circle()
-                    .fill(category.uiColor)
-                    .frame(width: 12, height: 12)
+                .padding(.horizontal)
             }
         }
         .padding(.vertical, 8)
+        .background(Color(uiColor: .secondarySystemBackground))
+    }
+    
+    private var monthYearString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yyyy"
+        return formatter.string(from: selectedDate)
+    }
+    
+    private func getDays() -> [Date] {
+        let today = calendar.startOfDay(for: Date())
+        return (0..<daysToShow).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: today)
+        }
+    }
+    
+    private func moveMonth(by value: Int) {
+        if let newDate = calendar.date(byAdding: .month, value: value, to: selectedDate) {
+            selectedDate = newDate
+        }
+    }
+}
+
+struct DayCell: View {
+    let date: Date
+    let isSelected: Bool
+    private let calendar = Calendar.current
+    
+    private var dayNumber: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d"
+        return formatter.string(from: date)
+    }
+    
+    private var dayName: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: date).uppercased()
+    }
+    
+    var body: some View {
+        VStack {
+            Text(dayName)
+                .font(.caption2)
+                .foregroundColor(isSelected ? .white : .secondary)
+            
+            Text(dayNumber)
+                .font(.headline)
+                .foregroundColor(isSelected ? .white : .primary)
+        }
+        .frame(width: 45, height: 60)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(ThemeColors.surface)
-                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
+                .fill(isSelected ? Color.accentColor : Color(uiColor: .tertiarySystemBackground))
         )
-        .offset(x: offset)
-        .onAppear {
-            withAnimation(.spring(duration: 0.6, bounce: 0.3)) {
-                offset = 0
+    }
+}
+
+struct TimelineView: View {
+    let hours = Calendar.current.generateHours()
+    let items: [Item]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(hours, id: \.self) { hour in
+                TimeSlot(hour: hour, items: items)
             }
         }
     }
 }
 
-#Preview {
-    do {
-        let schema = Schema([Item.self, Category.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: schema, configurations: config)
-        
-        // Add sample data
-        let sampleCategory = Category(name: "Work", color: "#FF0000")
-        container.mainContext.insert(sampleCategory)
-        
-        let example1 = Item(title: "Example task 1", isCompleted: false, category: sampleCategory)
-        let example2 = Item(title: "Example task 2", isCompleted: true, category: sampleCategory)
-        container.mainContext.insert(example1)
-        container.mainContext.insert(example2)
-        
-        return NavigationStack {
-            ContentView()
-                .modelContainer(container)
+struct TimeSlot: View {
+    let hour: Date
+    let items: [Item]
+    private let calendar = Calendar.current
+    
+    private let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h a"
+        return formatter
+    }()
+    
+    private var tasksInThisHour: [Item] {
+        items.filter { item in
+            guard let startTime = item.startTime else { return false }
+            return calendar.component(.hour, from: startTime) == calendar.component(.hour, from: hour)
         }
-    } catch {
-        return Text("Failed to create preview: \(error.localizedDescription)")
+    }
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            Text(timeFormatter.string(from: hour))
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(width: 50, alignment: .leading)
+            
+            VStack(spacing: 8) {
+                if tasksInThisHour.isEmpty {
+                    Rectangle()
+                        .fill(Color(uiColor: .tertiarySystemBackground))
+                        .frame(height: 80)
+                        .cornerRadius(12)
+                } else {
+                    ForEach(tasksInThisHour) { task in
+                        TaskCell(task: task)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct TaskCell: View {
+    let task: Item
+    
+    var body: some View {
+        HStack {
+            Rectangle()
+                .fill(task.category?.uiColor ?? Color.accentColor)
+                .frame(width: 4)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(task.title)
+                    .font(.system(.body, weight: .medium))
+                
+                if let startTime = task.startTime, let endTime = task.endTime {
+                    Text("\(formatTime(startTime)) to \(formatTime(endTime))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            
+            Spacer()
+        }
+        .background(Color(uiColor: .secondarySystemBackground))
+        .cornerRadius(12)
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+}
+
+struct BottomNavBar: View {
+    @Binding var showingAddTask: Bool
+    
+    var body: some View {
+        HStack(spacing: 40) {
+            BottomNavButton(icon: "house.fill", isSelected: true)
+            BottomNavButton(icon: "calendar", isSelected: false)
+            
+            Button(action: { showingAddTask.toggle() }) {
+                Circle()
+                    .fill(Color.accentColor)
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Image(systemName: "plus")
+                            .font(.title3)
+                            .foregroundColor(.white)
+                    )
+            }
+            
+            BottomNavButton(icon: "bell", isSelected: false)
+            BottomNavButton(icon: "gearshape", isSelected: false)
+        }
+        .padding(.vertical, 8)
+        .background(
+            Color(uiColor: .secondarySystemBackground)
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+}
+
+struct BottomNavButton: View {
+    let icon: String
+    let isSelected: Bool
+    
+    var body: some View {
+        Button(action: {}) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(isSelected ? Color.accentColor : .gray)
+        }
+    }
+}
+
+struct AddTaskView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var isPresented: Bool
+    @State private var taskTitle = ""
+    @State private var selectedDate = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var startTime = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var endTime: Date
+    @State private var selectedCategory: Category?
+    let modelContext: ModelContext
+    
+    init(isPresented: Binding<Bool>, modelContext: ModelContext) {
+        self._isPresented = isPresented
+        self.modelContext = modelContext
+        let defaultStartTime = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
+        let defaultEndTime = Calendar.current.date(byAdding: .hour, value: 1, to: defaultStartTime) ?? Date()
+        self._startTime = State(initialValue: defaultStartTime)
+        self._endTime = State(initialValue: defaultEndTime)
+    }
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("Task Title", text: $taskTitle)
+                }
+                
+                Section {
+                    DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
+                    DatePicker("Start Time", selection: $startTime, displayedComponents: .hourAndMinute)
+                    DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
+                }
+                
+                Section {
+                    Picker("Category", selection: $selectedCategory) {
+                        Text("None").tag(Optional<Category>.none)
+                        ForEach(Category.allCategories(modelContext)) { category in
+                            Text(category.name).tag(Optional(category))
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Add Task")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        addTask()
+                        dismiss()
+                    }
+                    .disabled(taskTitle.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func addTask() {
+        let calendar = Calendar.current
+        
+        // Combine selected date with selected times
+        let taskStartTime = calendar.date(bySettingHour: calendar.component(.hour, from: startTime),
+                                        minute: calendar.component(.minute, from: startTime),
+                                        second: 0,
+                                        of: selectedDate) ?? startTime
+        
+        let taskEndTime = calendar.date(bySettingHour: calendar.component(.hour, from: endTime),
+                                      minute: calendar.component(.minute, from: endTime),
+                                      second: 0,
+                                      of: selectedDate) ?? endTime
+        
+        let newItem = Item(
+            title: taskTitle,
+            isCompleted: false,
+            category: selectedCategory
+        )
+        newItem.startTime = taskStartTime
+        newItem.endTime = taskEndTime
+        newItem.createdDate = taskStartTime
+        modelContext.insert(newItem)
+    }
+}
+
+extension Category {
+    static func allCategories(_ context: ModelContext) -> [Category] {
+        let descriptor = FetchDescriptor<Category>()
+        return (try? context.fetch(descriptor)) ?? []
+    }
+}
+
+extension Calendar {
+    func generateHours() -> [Date] {
+        let startOfDay = self.startOfDay(for: Date())
+        return (0..<24).compactMap { hour in
+            self.date(byAdding: .hour, value: hour, to: startOfDay)
+        }
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try! ModelContainer(for: Item.self, Category.self, configurations: config)
+        
+        let category = Category(name: "Work", color: "#FF0000")
+        container.mainContext.insert(category)
+        
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Morning Meeting
+        let task1 = Item(
+            title: "Morning Meeting",
+            isCompleted: false,
+            timestamp: now,
+            priority: .normal,
+            category: category
+        )
+        if let startTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now),
+           let endTime = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: now) {
+            task1.startTime = startTime
+            task1.endTime = endTime
+            task1.createdDate = startTime
+        }
+        
+        // Lunch Break
+        let task2 = Item(
+            title: "Lunch Break",
+            isCompleted: false,
+            timestamp: now,
+            priority: .normal,
+            category: category
+        )
+        if let startTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: now),
+           let endTime = calendar.date(bySettingHour: 13, minute: 0, second: 0, of: now) {
+            task2.startTime = startTime
+            task2.endTime = endTime
+            task2.createdDate = startTime
+        }
+        
+        container.mainContext.insert(task1)
+        container.mainContext.insert(task2)
+        
+        return ContentView()
+            .modelContainer(container)
     }
 }
 

@@ -12,6 +12,9 @@ final class Item {
     var order: Int
     var tags: [String] = []  // Store tags directly as array
     var category: Category?
+    var startTime: Date?
+    var endTime: Date?
+    var createdDate: Date
     
     init(title: String = "", isCompleted: Bool = false, timestamp: Date = .now, priority: Priority = .normal, order: Int = 0, tags: [String] = [], category: Category? = nil) {
         self.id = UUID().uuidString
@@ -22,6 +25,9 @@ final class Item {
         self.order = order
         self.tags = tags
         self.category = category
+        self.createdDate = timestamp
+        self.startTime = timestamp
+        self.endTime = timestamp.addingTimeInterval(3600)
     }
     
     enum Priority: Int, Codable {
