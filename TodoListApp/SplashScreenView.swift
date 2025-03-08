@@ -111,6 +111,15 @@ struct FullScreenCoverModifier<CoverContent: View>: ViewModifier {
 }
 
 #Preview {
-    SplashScreenView()
-        .modelContainer(for: [Category.self, Item.self], inMemory: true)
+    let container: ModelContainer
+    do {
+        let schema = Schema([Item.self, Category.self])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        container = try ModelContainer(for: schema, configurations: modelConfiguration)
+    } catch {
+        fatalError("Could not create preview container: \(error.localizedDescription)")
+    }
+    
+    return SplashScreenView()
+        .modelContainer(container)
 } 
