@@ -6,6 +6,12 @@ struct CategoryView: View {
     @Query private var categories: [Category]
     @State private var newCategoryName = ""
     @State private var selectedColor = Color.blue
+    @State private var showAddCategory = false
+    
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
     
     var body: some View {
         ZStack {
@@ -13,94 +19,66 @@ struct CategoryView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 16) {
-                HStack(spacing: 12) {
-                    TextField("New category name", text: $newCategoryName)
-                        .textFieldStyle(.plain)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(ThemeColors.surface)
-                                .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(ThemeColors.primary.opacity(0.1), lineWidth: 1)
-                                )
-                        )
-                        .tint(ThemeColors.primary)
-                        .foregroundColor(ThemeColors.textPrimary)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                    
-                    ColorPicker("", selection: $selectedColor)
-                        .labelsHidden()
-                    
-                    Button(action: addCategory) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 42, height: 42)
-                            .background(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [ThemeColors.primary, ThemeColors.primary.opacity(0.8)]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                    }
-                    .scaleEffect(newCategoryName.isEmpty ? 1 : 1.05)
-                    .animation(.spring(response: 0.3), value: newCategoryName.isEmpty)
+                if showAddCategory {
+                    addCategorySection
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
-                .padding(.horizontal)
-                .padding(.top, 12)
                 
-                List {
-                    ForEach(categories, id: \.id) { category in
-                        HStack(spacing: 12) {
-                            Circle()
-                                .fill(category.uiColor)
-                                .frame(width: 20, height: 20)
-                            
-                            HStack(spacing: 8) {
-                                Text(category.name)
-                                    .font(.system(.body, weight: .medium))
-                                    .foregroundColor(ThemeColors.textPrimary)
-                                    .lineLimit(1)
-                                
-                                Spacer()
-                                
-                                Text("\(category.items.count)")
-                                    .font(.caption)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(ThemeColors.surface)
-                                    .foregroundColor(ThemeColors.textPrimary)
-                                    .cornerRadius(6)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .stroke(ThemeColors.divider, lineWidth: 1)
-                                    )
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                if categories.isEmpty {
+                    ContentUnavailableView(
+                        label: {
+                            Label("No Categories", systemImage: "folder")
+                        },
+                        description: {
+                            Text("Add a category to organize your tasks")
                         }
-                        .frame(height: 44)
-                        .padding(.horizontal, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(ThemeColors.surface)
-                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    )
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(categories) { category in
+                                CategoryCard(category: category) {
+                                    deleteCategory(category)
+                                }
+                                .transition(.scale.combined(with: .opacity))
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 8)
                     }
-                    .onDelete(perform: deleteCategories)
                 }
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                .listStyle(.plain)
+            }
+            
+            // Floating Action Button
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        withAnimation(.spring(duration: 0.6)) {
+                            showAddCategory.toggle()
+                        }
+                    }) {
+                        Image(systemName: showAddCategory ? "xmark" : "plus")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [ThemeColors.primary, ThemeColors.accent],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            )
+                            .shadow(color: ThemeColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
+                    }
+                    .rotationEffect(.degrees(showAddCategory ? 45 : 0))
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                }
             }
         }
         .navigationTitle("Categories")
@@ -112,21 +90,127 @@ struct CategoryView: View {
         .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: ThemeColors.textPrimary)
     }
     
-    private func addCategory() {
-        guard !newCategoryName.isEmpty else { return }
-        let hexColor = String(format: "#%02X%02X%02X",
-                            Int(selectedColor.components.red * 255),
-                            Int(selectedColor.components.green * 255),
-                            Int(selectedColor.components.blue * 255))
-        let category = Category(name: newCategoryName, color: hexColor)
-        modelContext.insert(category)
-        newCategoryName = ""
+    private var addCategorySection: some View {
+        HStack(spacing: 12) {
+            TextField("New category name", text: $newCategoryName)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(ThemeColors.surface)
+                        .shadow(color: ThemeColors.primary.opacity(0.1), radius: 8, x: 0, y: 4)
+                )
+                .tint(ThemeColors.primary)
+                .foregroundColor(ThemeColors.textPrimary)
+                .submitLabel(.done)
+                .onSubmit {
+                    if !newCategoryName.isEmpty {
+                        addCategory()
+                    }
+                }
+            
+            ColorPicker("", selection: $selectedColor)
+                .labelsHidden()
+        }
+        .padding(.horizontal)
+        .padding(.top, 12)
     }
     
-    private func deleteCategories(offsets: IndexSet) {
+    private func addCategory() {
+        guard !newCategoryName.isEmpty else { return }
         withAnimation {
-            for index in offsets {
-                modelContext.delete(categories[index])
+            let hexColor = String(format: "#%02X%02X%02X",
+                                Int(selectedColor.components.red * 255),
+                                Int(selectedColor.components.green * 255),
+                                Int(selectedColor.components.blue * 255))
+            let category = Category(name: newCategoryName, color: hexColor)
+            modelContext.insert(category)
+            newCategoryName = ""
+            showAddCategory = false
+        }
+    }
+    
+    private func deleteCategory(_ category: Category) {
+        withAnimation {
+            modelContext.delete(category)
+        }
+    }
+}
+
+struct CategoryCard: View {
+    let category: Category
+    let onDelete: () -> Void
+    @State private var offset = CGSize.zero
+    @State private var isSwiped = false
+    
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            // Delete button
+            Button(action: {
+                withAnimation(.spring(duration: 0.3)) {
+                    onDelete()
+                }
+            }) {
+                Image(systemName: "trash")
+                    .font(.title3)
+                    .foregroundColor(.white)
+                    .frame(width: 80, height: 100)
+                    .background(Color.red)
+                    .cornerRadius(16)
+            }
+            
+            // Card content
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Circle()
+                        .fill(category.uiColor)
+                        .frame(width: 32, height: 32)
+                    
+                    Spacer()
+                    
+                    Text("\(category.items.count)")
+                        .font(.system(.title3, weight: .semibold))
+                        .foregroundColor(ThemeColors.textSecondary)
+                }
+                
+                Text(category.name)
+                    .font(.system(.body, weight: .medium))
+                    .foregroundColor(ThemeColors.textPrimary)
+                    .lineLimit(1)
+            }
+            .frame(height: 100)
+            .padding(16)
+            .background(ThemeColors.surface)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+            .offset(x: offset.width)
+            .gesture(
+                DragGesture()
+                    .onChanged { gesture in
+                        if gesture.translation.width < 0 {
+                            self.offset = gesture.translation
+                        }
+                    }
+                    .onEnded { _ in
+                        withAnimation(.spring(duration: 0.3)) {
+                            if self.offset.width < -50 {
+                                self.offset.width = -80
+                                self.isSwiped = true
+                            } else {
+                                self.offset = .zero
+                                self.isSwiped = false
+                            }
+                        }
+                    }
+            )
+            .onTapGesture {
+                if isSwiped {
+                    withAnimation(.spring(duration: 0.3)) {
+                        self.offset = .zero
+                        self.isSwiped = false
+                    }
+                }
             }
         }
     }

@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var showingTagSheet = false
     @State private var selectedItem: Item?
     @State private var isDataLoaded = false
+    @State private var showAddTask = false
     
     var body: some View {
         NavigationStack {
@@ -28,31 +29,63 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 16) {
-                addTaskSection
+                if showAddTask {
+                    addTaskSection
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
                 categoryPickerSection
                 taskListSection
             }
+            
+            // Floating Action Button
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        withAnimation(.spring(duration: 0.6)) {
+                            showAddTask.toggle()
+                        }
+                    }) {
+                        Image(systemName: showAddTask ? "xmark" : "plus")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [ThemeColors.primary, ThemeColors.accent],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            )
+                            .shadow(color: ThemeColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
+                    }
+                    .rotationEffect(.degrees(showAddTask ? 45 : 0))
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                }
+            }
         }
-        .navigationTitle(Text("Tasks"))
+        .navigationTitle("Tasks")
         .toolbarBackground(ThemeColors.background, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
-                    .foregroundColor(ThemeColors.textPrimary)
+                    .foregroundColor(ThemeColors.primary)
             }
             
             ToolbarItem(placement: .navigationBarLeading) {
                 NavigationLink(destination: CategoryView()) {
                     Image(systemName: "folder.badge.plus")
-                        .foregroundColor(ThemeColors.textPrimary)
+                        .foregroundColor(ThemeColors.primary)
                 }
             }
         }
-        .sheet(isPresented: $showingTagSheet, onDismiss: {
-            withAnimation {
-                selectedItem = nil
-            }
-        }) {
+        .sheet(isPresented: $showingTagSheet) {
             if let item = selectedItem, isDataLoaded {
                 TagManagementView(item: item)
                     .onDisappear {
@@ -60,8 +93,6 @@ struct ContentView: View {
                     }
             }
         }
-        .foregroundStyle(ThemeColors.textPrimary)
-        .navigationBarAppearance(backgroundColor: ThemeColors.background, foregroundColor: ThemeColors.textPrimary)
     }
     
     private var addTaskSection: some View {
@@ -73,54 +104,44 @@ struct ContentView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .fill(ThemeColors.surface)
-                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(ThemeColors.primary.opacity(0.1), lineWidth: 1)
-                        )
+                        .shadow(color: ThemeColors.primary.opacity(0.1), radius: 8, x: 0, y: 4)
                 )
                 .tint(ThemeColors.primary)
                 .foregroundColor(ThemeColors.textPrimary)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .animation(.spring(response: 0.3), value: newItemTitle)
-            
-            Button(action: addItem) {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 42, height: 42)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color(red: 59/255, green: 130/255, blue: 246/255), Color(red: 37/255, green: 99/255, blue: 235/255)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-            }
-            .scaleEffect(newItemTitle.isEmpty ? 1 : 1.05)
-            .animation(.spring(response: 0.3), value: newItemTitle.isEmpty)
+                .submitLabel(.done)
+                .onSubmit {
+                    if !newItemTitle.isEmpty {
+                        addItem()
+                    }
+                }
         }
         .padding(.horizontal)
         .padding(.top, 12)
     }
     
     private var categoryPickerSection: some View {
-        Picker("Category", selection: $selectedCategory) {
-            Text("All Categories")
-                .foregroundColor(ThemeColors.textPrimary)
-                .tag(nil as Category?)
-            ForEach(categories, id: \.id) { category in
-                Text(category.name)
-                    .foregroundColor(ThemeColors.textPrimary)
-                    .tag(category as Category?)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                CategoryChip(name: "All", isSelected: selectedCategory == nil) {
+                    withAnimation {
+                        selectedCategory = nil
+                    }
+                }
+                
+                ForEach(categories) { category in
+                    CategoryChip(
+                        name: category.name,
+                        color: category.uiColor,
+                        isSelected: selectedCategory?.id == category.id
+                    ) {
+                        withAnimation {
+                            selectedCategory = category
+                        }
+                    }
+                }
             }
+            .padding(.horizontal)
         }
-        .pickerStyle(.menu)
-        .tint(ThemeColors.textPrimary)
-        .padding(.horizontal)
     }
     
     private var taskListSection: some View {
@@ -131,14 +152,16 @@ struct ContentView: View {
                 })
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
-                        deleteItem(item)
+                        withAnimation {
+                            deleteItem(item)
+                        }
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
                     
                     Button {
                         withAnimation {
-                            selectedItem = nil  // Reset first
+                            selectedItem = nil
                             DispatchQueue.main.async {
                                 selectedItem = item
                                 showingTagSheet = true
@@ -147,14 +170,32 @@ struct ContentView: View {
                     } label: {
                         Label("Tags", systemImage: "tag")
                     }
-                    .tint(.orange)
+                    .tint(ThemeColors.accent)
                 }
+                .listRowBackground(ThemeColors.surface)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
             }
             .onMove(perform: moveItems)
         }
         .scrollContentBackground(.hidden)
         .background(Color.clear)
         .listStyle(.plain)
+        .overlay {
+            if filteredItems.isEmpty {
+                ContentUnavailableView(
+                    label: {
+                        Label(
+                            selectedCategory == nil ? "No Tasks" : "No Tasks in Category",
+                            systemImage: "checkmark.circle"
+                        )
+                    },
+                    description: {
+                        Text(selectedCategory == nil ? "Add a new task to get started" : "Add a task to this category")
+                    }
+                )
+            }
+        }
     }
     
     private var filteredItems: [Item] {
@@ -171,27 +212,21 @@ struct ContentView: View {
             let newItem = Item(title: newItemTitle, order: newOrder, category: selectedCategory)
             modelContext.insert(newItem)
             newItemTitle = ""
+            
+            if showAddTask {
+                showAddTask = false
+            }
         }
     }
     
     private func toggleItemCompletion(_ item: Item) {
-        withAnimation {
+        withAnimation(.spring(duration: 0.3)) {
             item.isCompleted.toggle()
         }
     }
     
     private func deleteItem(_ item: Item) {
-        withAnimation {
-            modelContext.delete(item)
-        }
-    }
-    
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+        modelContext.delete(item)
     }
     
     private func moveItems(from source: IndexSet, to destination: Int) {
@@ -204,68 +239,83 @@ struct ContentView: View {
     }
 }
 
+struct CategoryChip: View {
+    let name: String
+    var color: Color = ThemeColors.primary
+    var isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(name)
+                .font(.system(.subheadline, weight: .medium))
+                .foregroundColor(isSelected ? .white : ThemeColors.textPrimary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? color : ThemeColors.surface)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(color, lineWidth: isSelected ? 0 : 1)
+                )
+        }
+    }
+}
+
 struct ItemRow: View {
     let item: Item
     let toggleCompletion: () -> Void
+    @State private var offset: CGFloat = 1000
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             Button(action: toggleCompletion) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(item.isCompleted ? ThemeColors.textPrimary.opacity(0.6) : ThemeColors.textPrimary)
-                    .contentShape(Rectangle())
+                    .font(.system(size: 22))
+                    .foregroundColor(item.isCompleted ? ThemeColors.success : ThemeColors.textSecondary)
             }
             
-            HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
-                    .font(.system(.body, weight: .medium))
+                    .font(.system(.body))
+                    .foregroundColor(ThemeColors.textPrimary)
                     .strikethrough(item.isCompleted)
-                    .foregroundColor(item.isCompleted ? 
-                        ThemeColors.textPrimary.opacity(0.6) : ThemeColors.textPrimary)
-                    .lineLimit(1)
-                
-                if let category = item.category {
-                    Text(category.name)
-                        .font(.caption)
-                        .foregroundColor(ThemeColors.textPrimary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(ThemeColors.surface)
-                        .cornerRadius(6)
-                }
                 
                 if !item.tags.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 8) {
                             ForEach(item.tags, id: \.self) { tag in
                                 Text("#\(tag)")
-                                    .font(.caption)
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 2)
-                                    .background(ThemeColors.surface)
+                                    .font(.system(.caption, weight: .medium))
                                     .foregroundColor(ThemeColors.primary)
-                                    .cornerRadius(4)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .stroke(ThemeColors.primary.opacity(0.3), lineWidth: 1)
-                                    )
                             }
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Spacer()
+            
+            if let category = item.category {
+                Circle()
+                    .fill(category.uiColor)
+                    .frame(width: 12, height: 12)
+            }
         }
-        .frame(height: 44)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.1))
+                .fill(ThemeColors.surface)
+                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
         )
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
-        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        .offset(x: offset)
+        .onAppear {
+            withAnimation(.spring(duration: 0.6, bounce: 0.3)) {
+                offset = 0
+            }
+        }
     }
 }
 
@@ -285,3 +335,4 @@ struct ItemRow: View {
         return Text("Failed to load preview: \(error.localizedDescription)")
     }
 }
+
