@@ -11,44 +11,54 @@ struct SplashScreenView: View {
     
     var body: some View {
         ZStack {
-            ThemeColors.background
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Icon container
+            if !isActive {
                 ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [ThemeColors.primary, ThemeColors.accent],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 80, height: 80)
-                        .shadow(color: ThemeColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
+                    ThemeColors.background
+                        .ignoresSafeArea()
                     
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundColor(.white)
-                        .offset(y: checkmarkOffset)
-                        .opacity(checkmarkOpacity)
+                    VStack(spacing: 0) {
+                        // Icon container
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [ThemeColors.primary, ThemeColors.accent],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(width: 80, height: 80)
+                                .shadow(color: ThemeColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
+                            
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundColor(.white)
+                                .offset(y: checkmarkOffset)
+                                .opacity(checkmarkOpacity)
+                        }
+                        .scaleEffect(iconScale)
+                        
+                        // App name
+                        Text("TodoList")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [ThemeColors.primary, ThemeColors.accent],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .padding(.top, 16)
+                            .offset(y: textOffset)
+                            .opacity(textOpacity)
+                    }
                 }
-                .scaleEffect(iconScale)
-                
-                // App name
-                Text("TodoList")
-                    .font(.system(size: 36, weight: .bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [ThemeColors.primary, ThemeColors.accent],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .padding(.top, 16)
-                    .offset(y: textOffset)
-                    .opacity(textOpacity)
+                .transition(.move(edge: .bottom))
+            }
+            
+            if isActive {
+                WelcomeView()
+                    .transition(.move(edge: .bottom))
             }
         }
         .onAppear {
@@ -71,40 +81,9 @@ struct SplashScreenView: View {
             
             // Navigate to main screen
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(.easeInOut(duration: 0.6)) {
                     self.isActive = true
                 }
-            }
-        }
-        .fullScreenCover(isPresented: $isActive, transition: .opacity) {
-            WelcomeView()
-        }
-    }
-}
-
-extension View {
-    func fullScreenCover<Content: View>(
-        isPresented: Binding<Bool>,
-        transition: AnyTransition = .move(edge: .trailing),
-        @ViewBuilder content: @escaping () -> Content
-    ) -> some View {
-        self.modifier(FullScreenCoverModifier(isPresented: isPresented, transition: transition, content: content))
-    }
-}
-
-struct FullScreenCoverModifier<CoverContent: View>: ViewModifier {
-    @Binding var isPresented: Bool
-    let transition: AnyTransition
-    let content: () -> CoverContent
-    
-    func body(content: Content) -> some View {
-        ZStack {
-            content
-            
-            if isPresented {
-                self.content()
-                    .transition(transition)
-                    .zIndex(1)
             }
         }
     }

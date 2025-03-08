@@ -122,55 +122,57 @@ struct WelcomeView: View {
     
     var body: some View {
         ZStack {
-            // Animated background
-            AnimatedBackground(animateBackground: animateBackground)
-            
-            VStack(spacing: 40) {
-                Spacer()
+            if !showMainApp {
+                // Animated background
+                AnimatedBackground(animateBackground: animateBackground)
                 
-                // Welcome header
-                WelcomeHeader(animateIcon: animateIcon)
-                
-                // Features section
-                VStack(spacing: 20) {
-                    FeatureRow(icon: "tag.fill", title: "Smart Tags", description: "Organize tasks with custom tags")
-                    FeatureRow(icon: "folder.fill", title: "Categories", description: "Group related tasks together")
-                    FeatureRow(icon: "arrow.up.and.down", title: "Priority", description: "Arrange tasks by importance")
-                }
-                .padding(.horizontal, 32)
-                
-                Spacer()
-                
-                // Get Started Button
-                Button(action: {
-                    withAnimation(.spring(duration: 0.6)) {
-                        showMainApp = true
+                VStack(spacing: 40) {
+                    Spacer()
+                    
+                    // Welcome header
+                    WelcomeHeader(animateIcon: animateIcon)
+                    
+                    // Features section
+                    VStack(spacing: 20) {
+                        FeatureRow(icon: "tag.fill", title: "Smart Tags", description: "Organize tasks with custom tags")
+                        FeatureRow(icon: "folder.fill", title: "Categories", description: "Group related tasks together")
+                        FeatureRow(icon: "arrow.up.and.down", title: "Priority", description: "Arrange tasks by importance")
                     }
-                }) {
-                    HStack {
+                    .padding(.horizontal, 32)
+                    
+                    Spacer()
+                    
+                    // Get Started Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showMainApp = true
+                        }
+                    }) {
                         Text("Get Started")
                             .font(.system(size: 18, weight: .semibold))
-                        
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 18, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
                                 LinearGradient(
                                     colors: [ThemeColors.primary, ThemeColors.accent],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                    )
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: ThemeColors.primary.opacity(0.3), radius: 10, x: 0, y: 5)
+                    }
                     .padding(.horizontal, 32)
-                    .shadow(color: ThemeColors.primary.opacity(0.3), radius: 15, x: 0, y: 5)
+                    .padding(.bottom, 32)
                 }
-                .padding(.bottom, 50)
+                .transition(.move(edge: .leading))
+            }
+            
+            if showMainApp {
+                MainTabView()
+                    .modelContainer(for: [Category.self, Item.self])
+                    .transition(.move(edge: .trailing))
             }
         }
         .background(ThemeColors.background)
@@ -179,9 +181,6 @@ struct WelcomeView: View {
                 animateBackground = true
                 animateIcon = true
             }
-        }
-        .fullScreenCover(isPresented: $showMainApp, onDismiss: nil) {
-            ContentView()
         }
     }
 }
