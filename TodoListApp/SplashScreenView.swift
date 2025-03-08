@@ -112,5 +112,5 @@ struct FullScreenCoverModifier<CoverContent: View>: ViewModifier {
 
 #Preview {
     SplashScreenView()
-        .modelContainer(for: [Category.self, Item.self])
+        .modelContainer(for: [Category.self, Item.self], inMemory: true)
 } 

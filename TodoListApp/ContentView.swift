@@ -321,18 +321,25 @@ struct ItemRow: View {
 
 #Preview {
     do {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: Item.self, configurations: config)
+        let schema = Schema([Item.self, Category.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: config)
         
-        let example1 = Item(title: "Example task 1", isCompleted: false)
-        let example2 = Item(title: "Example task 2", isCompleted: true)
+        // Add sample data
+        let sampleCategory = Category(name: "Work", color: "#FF0000")
+        container.mainContext.insert(sampleCategory)
+        
+        let example1 = Item(title: "Example task 1", isCompleted: false, category: sampleCategory)
+        let example2 = Item(title: "Example task 2", isCompleted: true, category: sampleCategory)
         container.mainContext.insert(example1)
         container.mainContext.insert(example2)
         
-        return ContentView()
-            .modelContainer(container)
+        return NavigationStack {
+            ContentView()
+                .modelContainer(container)
+        }
     } catch {
-        return Text("Failed to load preview: \(error.localizedDescription)")
+        return Text("Failed to create preview: \(error.localizedDescription)")
     }
 }
 

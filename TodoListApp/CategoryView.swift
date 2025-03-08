@@ -252,6 +252,6 @@ extension View {
 #Preview {
     NavigationStack {
         CategoryView()
-            .modelContainer(for: [Category.self, Item.self])
+            .modelContainer(for: [Category.self, Item.self], inMemory: true)
     }
 } 
