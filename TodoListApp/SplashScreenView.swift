@@ -3,8 +3,7 @@ import SwiftData
 
 struct SplashScreenView: View {
     @State private var isActive = false
-    @State private var size = 0.8
-    @State private var opacity = 0.5
+    @State private var opacity = 0.0
     
     var body: some View {
         NavigationStack {
@@ -12,23 +11,18 @@ struct SplashScreenView: View {
                 WelcomeView()
             } else {
                 VStack {
-                    VStack {
-                        Text("TodoList")
-                            .font(.system(size: 48))
-                            .fontWeight(.bold)
-                            .foregroundColor(.blue)
-                    }
-                    .scaleEffect(size)
-                    .opacity(opacity)
-                    .onAppear {
-                        withAnimation(.easeIn(duration: 1.2)) {
-                            self.size = 0.9
-                            self.opacity = 1.0
-                        }
-                    }
+                    Text("TodoList")
+                        .font(.system(size: 48))
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
                 }
+                .opacity(opacity)
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    withAnimation(.easeIn(duration: 1.0)) {
+                        self.opacity = 1.0
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         withAnimation {
                             self.isActive = true
                         }
