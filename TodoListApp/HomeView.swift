@@ -5,7 +5,7 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var categories: [Category]
     @State private var searchText = ""
-    @State private var showingAddCategory = false
+    @Binding var showingAddCategory: Bool
     
     private var buttonGradient: LinearGradient {
         LinearGradient(
@@ -80,19 +80,7 @@ struct HomeView: View {
                     }
                 }
                 .navigationTitle("My Tasks")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: { showingAddCategory = true }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title2)
-                                .foregroundStyle(buttonGradient)
-                        }
-                    }
-                }
             }
-        }
-        .sheet(isPresented: $showingAddCategory) {
-            AddCategoryView()
         }
     }
     
@@ -220,6 +208,6 @@ extension Color {
 }
 
 #Preview {
-    HomeView()
+    HomeView(showingAddCategory: .constant(false))
         .modelContainer(for: [Category.self, Item.self])
 } 
