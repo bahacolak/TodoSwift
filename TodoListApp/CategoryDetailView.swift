@@ -20,10 +20,19 @@ struct CategoryDetailView: View {
                 .ignoresSafeArea()
             
             List {
-                ForEach(category.items ?? []) { item in
-                    TaskRow(item: item)
+                if category.items?.isEmpty ?? true {
+                    Text("No tasks yet")
+                        .foregroundColor(ThemeColors.textSecondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .padding(.top, 20)
+                } else {
+                    ForEach(category.items ?? []) { item in
+                        TaskRow(item: item)
+                    }
+                    .onDelete(perform: deleteItems)
                 }
-                .onDelete(perform: deleteItems)
             }
             .scrollContentBackground(.hidden)
             .listStyle(.plain)
