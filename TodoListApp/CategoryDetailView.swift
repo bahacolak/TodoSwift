@@ -6,18 +6,37 @@ struct CategoryDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddTask = false
     
+    private var buttonGradient: LinearGradient {
+        LinearGradient(
+            colors: [ThemeColors.primary, ThemeColors.accent],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
     var body: some View {
-        List {
-            ForEach(category.items ?? []) { item in
-                TaskRow(item: item)
+        ZStack {
+            ThemeColors.background
+                .ignoresSafeArea()
+            
+            List {
+                ForEach(category.items ?? []) { item in
+                    TaskRow(item: item)
+                }
+                .onDelete(perform: deleteItems)
             }
-            .onDelete(perform: deleteItems)
+            .scrollContentBackground(.hidden)
+            .listStyle(.plain)
         }
         .navigationTitle(category.name)
+        .toolbarBackground(ThemeColors.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingAddTask = true }) {
-                    Image(systemName: "plus")
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(buttonGradient)
                 }
             }
         }
@@ -39,6 +58,14 @@ struct TaskRow: View {
     let item: Item
     @State private var isCompleted: Bool
     
+    private var buttonGradient: LinearGradient {
+        LinearGradient(
+            colors: [ThemeColors.primary, ThemeColors.accent],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
     init(item: Item) {
         self.item = item
         _isCompleted = State(initialValue: item.isCompleted)
@@ -48,17 +75,19 @@ struct TaskRow: View {
         HStack {
             Button(action: toggleCompletion) {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isCompleted ? item.category?.uiColor : Color(.systemGray4))
+                    .foregroundStyle(buttonGradient)
+                    .font(.title3)
             }
             
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
                     .strikethrough(isCompleted)
+                    .foregroundColor(ThemeColors.textPrimary)
                 
                 if let startTime = item.startTime {
                     Text(startTime.formatted(date: .omitted, time: .shortened))
                         .font(.caption)
-                        .foregroundColor(Color(.secondaryLabel))
+                        .foregroundColor(ThemeColors.textSecondary)
                 }
             }
             
@@ -66,9 +95,24 @@ struct TaskRow: View {
             
             if item.priority != .normal {
                 Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundColor(item.priority == .high ? Color(.systemRed) : Color(.systemOrange))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [item.priority.color, item.priority.color.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             }
         }
+        .padding(.vertical, 8)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(ThemeColors.surface)
+                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        )
+        .padding(.horizontal, 4)
     }
     
     private func toggleCompletion() {
@@ -85,26 +129,52 @@ struct AddTaskView: View {
     @State private var startTime = Date()
     @State private var priority: Item.Priority = .normal
     
+    private var buttonGradient: LinearGradient {
+        LinearGradient(
+            colors: [ThemeColors.primary, ThemeColors.accent],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
     var body: some View {
         NavigationView {
-            Form {
-                TextField("Task Title", text: $taskTitle)
+            ZStack {
+                ThemeColors.background
+                    .ignoresSafeArea()
                 
-                DatePicker("Start Time", selection: $startTime, displayedComponents: [.date, .hourAndMinute])
-                
-                Picker("Priority", selection: $priority) {
-                    Text("Low").tag(Item.Priority.low)
-                    Text("Normal").tag(Item.Priority.normal)
-                    Text("High").tag(Item.Priority.high)
+                Form {
+                    Section {
+                        TextField("Task Title", text: $taskTitle)
+                            .foregroundColor(ThemeColors.textPrimary)
+                    }
+                    
+                    Section {
+                        DatePicker("Start Time", selection: $startTime, displayedComponents: [.date, .hourAndMinute])
+                            .foregroundColor(ThemeColors.textPrimary)
+                    }
+                    
+                    Section {
+                        Picker("Priority", selection: $priority) {
+                            Text("Low").tag(Item.Priority.low)
+                            Text("Normal").tag(Item.Priority.normal)
+                            Text("High").tag(Item.Priority.high)
+                        }
+                        .foregroundColor(ThemeColors.textPrimary)
+                    }
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("New Task")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(ThemeColors.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundStyle(buttonGradient)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
@@ -112,6 +182,9 @@ struct AddTaskView: View {
                         dismiss()
                     }
                     .disabled(taskTitle.isEmpty)
+                    .foregroundStyle(taskTitle.isEmpty ? 
+                        LinearGradient(colors: [.gray, .gray.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing) 
+                        : buttonGradient)
                 }
             }
         }

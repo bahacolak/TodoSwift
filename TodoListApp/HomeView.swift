@@ -135,16 +135,16 @@ struct AddCategoryView: View {
     private var buttonGradient: LinearGradient {
         LinearGradient(
             colors: [ThemeColors.primary, ThemeColors.accent],
-            startPoint: .leading,
-            endPoint: .trailing
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
         )
     }
     
     private var disabledGradient: LinearGradient {
         LinearGradient(
             colors: [Color.gray, Color.gray],
-            startPoint: .leading,
-            endPoint: .trailing
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
         )
     }
     
