@@ -19,23 +19,24 @@ struct CategoryDetailView: View {
             ThemeColors.background
                 .ignoresSafeArea()
             
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    if category.items?.isEmpty ?? true {
-                        Text("No tasks yet")
-                            .foregroundColor(ThemeColors.textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 20)
-                    } else {
-                        ForEach(category.items ?? []) { item in
-                            TaskRow(item: item)
-                        }
+            List {
+                if category.items?.isEmpty ?? true {
+                    Text("No tasks yet")
+                        .foregroundColor(ThemeColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 20)
+                        .listRowBackground(Color.clear)
+                } else {
+                    ForEach(category.items ?? []) { item in
+                        TaskRow(item: item)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                            .listRowBackground(Color.clear)
                     }
+                    .onDelete(perform: deleteItems)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
             }
-            .scrollIndicators(.hidden)
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle(category.name)
         .toolbarBackground(ThemeColors.background, for: .navigationBar)
