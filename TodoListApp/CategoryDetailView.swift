@@ -19,24 +19,26 @@ struct CategoryDetailView: View {
             ThemeColors.background
                 .ignoresSafeArea()
             
-            List {
-                if category.items?.isEmpty ?? true {
-                    Text("No tasks yet")
-                        .foregroundColor(ThemeColors.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 20)
-                        .listRowBackground(Color.clear)
-                } else {
-                    ForEach(category.items ?? []) { item in
-                        TaskRow(item: item)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                            .listRowBackground(Color.clear)
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    if category.items?.isEmpty ?? true {
+                        Text("No tasks yet")
+                            .foregroundColor(ThemeColors.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 20)
+                    } else {
+                        ForEach(category.items ?? []) { item in
+                            TaskRow(item: item, onDelete: { itemToDelete in
+                                withAnimation {
+                                    deleteItem(itemToDelete)
+                                }
+                            })
+                            .padding(.horizontal, 16)
+                        }
                     }
-                    .onDelete(perform: deleteItems)
                 }
+                .padding(.vertical, 8)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
         }
         .navigationTitle(category.name)
         .toolbarBackground(ThemeColors.background, for: .navigationBar)
@@ -55,18 +57,21 @@ struct CategoryDetailView: View {
         }
     }
     
-    private func deleteItems(at offsets: IndexSet) {
-        for index in offsets {
-            if let item = category.items?[index] {
-                modelContext.delete(item)
-            }
+    private func deleteItem(_ item: Item) {
+        if let category = item.category,
+           let index = category.items?.firstIndex(where: { $0.id == item.id }) {
+            category.items?.remove(at: index)
+            modelContext.delete(item)
         }
     }
 }
 
 struct TaskRow: View {
     let item: Item
+    let onDelete: (Item) -> Void
     @State private var isCompleted: Bool
+    @State private var offset: CGFloat = 0
+    @Environment(\.modelContext) private var modelContext
     
     private var buttonGradient: LinearGradient {
         LinearGradient(
@@ -76,67 +81,83 @@ struct TaskRow: View {
         )
     }
     
-    init(item: Item) {
+    init(item: Item, onDelete: @escaping (Item) -> Void) {
         self.item = item
+        self.onDelete = onDelete
         _isCompleted = State(initialValue: item.isCompleted)
     }
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(buttonGradient)
-                .font(.system(size: 22))
-                .contentTransition(.symbolEffect(.replace))
+        ZStack {
+            Color.red
+                .cornerRadius(16)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
-                    .strikethrough(isCompleted)
-                    .foregroundColor(isCompleted ? ThemeColors.textSecondary : ThemeColors.textPrimary)
-                    .font(.system(size: 16, weight: .medium))
+            HStack {
+                Spacer()
+                Image(systemName: "trash")
+                    .foregroundColor(.white)
+                    .padding(.trailing, 25)
+            }
+            
+            HStack(spacing: 12) {
+                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(buttonGradient)
+                    .font(.system(size: 22))
+                    .contentTransition(.symbolEffect(.replace))
                 
-                if let startTime = item.startTime {
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 11))
-                            .foregroundColor(ThemeColors.textSecondary)
-                        Text(startTime.formatted(date: .omitted, time: .shortened))
-                            .font(.system(size: 13))
-                            .foregroundColor(ThemeColors.textSecondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .strikethrough(isCompleted)
+                        .foregroundColor(isCompleted ? ThemeColors.textSecondary : ThemeColors.textPrimary)
+                        .font(.system(size: 16, weight: .medium))
+                    
+                    if let startTime = item.startTime {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 11))
+                                .foregroundColor(ThemeColors.textSecondary)
+                            Text(startTime.formatted(date: .omitted, time: .shortened))
+                                .font(.system(size: 13))
+                                .foregroundColor(ThemeColors.textSecondary)
+                        }
                     }
                 }
+                
+                Spacer()
+                
+                if item.priority != .normal {
+                    priorityBadge
+                }
             }
-            
-            Spacer()
-            
-            if item.priority != .normal {
-                priorityBadge
-            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .background(ThemeColors.surface)
+            .cornerRadius(16)
+            .offset(x: offset)
+            .gesture(
+                DragGesture()
+                    .onChanged { gesture in
+                        if gesture.translation.width < 0 {
+                            offset = gesture.translation.width
+                        }
+                    }
+                    .onEnded { gesture in
+                        withAnimation {
+                            if gesture.translation.width < -100 {
+                                onDelete(item)
+                            } else {
+                                offset = 0
+                            }
+                        }
+                    }
+            )
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ThemeColors.surface)
-                .shadow(
-                    color: Color.black.opacity(0.04),
-                    radius: 8,
-                    x: 0,
-                    y: 2
-                )
-        )
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
         .opacity(isCompleted ? 0.8 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isCompleted)
-        .contentShape(RoundedRectangle(cornerRadius: 16))
         .onTapGesture {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 toggleCompletion()
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                // Delete functionality will be added
-            } label: {
-                Label("Delete", systemImage: "trash")
             }
         }
     }
