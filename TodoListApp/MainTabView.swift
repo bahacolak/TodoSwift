@@ -15,18 +15,6 @@ struct MainTabView: View {
                 
                 Text("")
                     .tag(1)
-                    .tabItem {
-                        Image(systemName: "plus.circle.fill")
-                            .environment(\.symbolVariants, .fill)
-                            .font(.system(size: 44))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [ThemeColors.primary, ThemeColors.accent],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
                 
                 CalendarView()
                     .tag(2)
@@ -56,17 +44,25 @@ struct MainTabView: View {
                 UITabBar.appearance().standardAppearance = appearance
                 UITabBar.appearance().scrollEdgeAppearance = appearance
             }
+            
+            // Custom Add Button
+            Button(action: {
+                showingAddCategory = true
+            }) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [ThemeColors.primary, ThemeColors.accent],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .offset(y: -10)
         }
         .sheet(isPresented: $showingAddCategory) {
             AddCategoryView()
-        }
-        .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == 1 {
-                // Middle tab selected
-                showingAddCategory = true
-                // Reset back to the first tab
-                selectedTab = 0
-            }
         }
     }
 }
