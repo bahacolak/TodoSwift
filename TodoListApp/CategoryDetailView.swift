@@ -19,23 +19,23 @@ struct CategoryDetailView: View {
             ThemeColors.background
                 .ignoresSafeArea()
             
-            List {
-                if category.items?.isEmpty ?? true {
-                    Text("No tasks yet")
-                        .foregroundColor(ThemeColors.textSecondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .padding(.top, 20)
-                } else {
-                    ForEach(category.items ?? []) { item in
-                        TaskRow(item: item)
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    if category.items?.isEmpty ?? true {
+                        Text("No tasks yet")
+                            .foregroundColor(ThemeColors.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 20)
+                    } else {
+                        ForEach(category.items ?? []) { item in
+                            TaskRow(item: item)
+                        }
                     }
-                    .onDelete(perform: deleteItems)
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             }
-            .scrollContentBackground(.hidden)
-            .listStyle(.plain)
+            .scrollIndicators(.hidden)
         }
         .navigationTitle(category.name)
         .toolbarBackground(ThemeColors.background, for: .navigationBar)
@@ -81,31 +81,25 @@ struct TaskRow: View {
     }
     
     var body: some View {
-        HStack(spacing: 16) {
-            Button(action: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    toggleCompletion()
-                }
-            }) {
-                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(buttonGradient)
-                    .font(.system(size: 24))
-                    .contentTransition(.symbolEffect(.replace))
-            }
+        HStack(spacing: 12) {
+            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(buttonGradient)
+                .font(.system(size: 22))
+                .contentTransition(.symbolEffect(.replace))
             
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
                     .strikethrough(isCompleted)
                     .foregroundColor(isCompleted ? ThemeColors.textSecondary : ThemeColors.textPrimary)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.system(size: 16, weight: .medium))
                 
                 if let startTime = item.startTime {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: "clock")
-                            .font(.system(size: 12))
+                            .font(.system(size: 11))
                             .foregroundColor(ThemeColors.textSecondary)
                         Text(startTime.formatted(date: .omitted, time: .shortened))
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                             .foregroundColor(ThemeColors.textSecondary)
                     }
                 }
@@ -118,23 +112,32 @@ struct TaskRow: View {
             }
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(ThemeColors.surface)
                 .shadow(
-                    color: Color.black.opacity(0.08),
+                    color: Color.black.opacity(0.04),
                     radius: 8,
                     x: 0,
-                    y: 4
+                    y: 2
                 )
         )
         .opacity(isCompleted ? 0.8 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isCompleted)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 4)
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
+        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                toggleCompletion()
+            }
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                // Delete functionality will be added
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
     
     private var priorityBadge: some View {
