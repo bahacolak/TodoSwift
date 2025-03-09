@@ -6,6 +6,9 @@ struct MainTabView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
+            Color.clear
+                .edgesIgnoringSafeArea(.all)
+            
             TabView(selection: $selectedTab) {
                 HomeView(showingAddCategory: $showingAddCategory)
                     .tag(0)
@@ -59,8 +62,10 @@ struct MainTabView: View {
                         )
                     )
             }
-            .offset(y: -10)
+            .offset(y: -35)
+            .edgesIgnoringSafeArea(.bottom)
         }
+        .edgesIgnoringSafeArea(.bottom)
         .sheet(isPresented: $showingAddCategory) {
             AddCategoryView()
         }
