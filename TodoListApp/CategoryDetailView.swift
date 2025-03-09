@@ -81,47 +81,96 @@ struct TaskRow: View {
     }
     
     var body: some View {
-        HStack {
-            Button(action: toggleCompletion) {
+        HStack(spacing: 16) {
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    toggleCompletion()
+                }
+            }) {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(buttonGradient)
-                    .font(.title3)
+                    .font(.system(size: 24))
+                    .contentTransition(.symbolEffect(.replace))
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(item.title)
                     .strikethrough(isCompleted)
-                    .foregroundColor(ThemeColors.textPrimary)
+                    .foregroundColor(isCompleted ? ThemeColors.textSecondary : ThemeColors.textPrimary)
+                    .font(.system(size: 17, weight: .medium))
                 
                 if let startTime = item.startTime {
-                    Text(startTime.formatted(date: .omitted, time: .shortened))
-                        .font(.caption)
-                        .foregroundColor(ThemeColors.textSecondary)
+                    HStack(spacing: 6) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 12))
+                            .foregroundColor(ThemeColors.textSecondary)
+                        Text(startTime.formatted(date: .omitted, time: .shortened))
+                            .font(.system(size: 14))
+                            .foregroundColor(ThemeColors.textSecondary)
+                    }
                 }
             }
             
             Spacer()
             
             if item.priority != .normal {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [item.priority.color, item.priority.color.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                priorityBadge
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(ThemeColors.surface)
+                .shadow(
+                    color: Color.black.opacity(0.08),
+                    radius: 8,
+                    x: 0,
+                    y: 4
+                )
+        )
+        .opacity(isCompleted ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isCompleted)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 4)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
+    }
+    
+    private var priorityBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "exclamationmark")
+                .font(.system(size: 12, weight: .bold))
+            Text(priorityText)
+                .font(.system(size: 12, weight: .semibold))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(ThemeColors.surface)
-                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            item.priority.color.opacity(0.2),
+                            item.priority.color.opacity(0.3)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
-        .padding(.horizontal, 4)
+        .foregroundColor(item.priority.color)
+    }
+    
+    private var priorityText: String {
+        switch item.priority {
+        case .low:
+            return "Low"
+        case .normal:
+            return "Normal"
+        case .high:
+            return "High"
+        }
     }
     
     private func toggleCompletion() {
