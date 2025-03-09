@@ -7,6 +7,14 @@ struct HomeView: View {
     @State private var searchText = ""
     @State private var showingAddCategory = false
     
+    private var buttonGradient: LinearGradient {
+        LinearGradient(
+            colors: [ThemeColors.primary, ThemeColors.accent],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
     var filteredCategories: [Category] {
         if searchText.isEmpty {
             return categories
@@ -25,7 +33,7 @@ struct HomeView: View {
                         // Search Bar
                         HStack {
                             Image(systemName: "magnifyingglass")
-                                .foregroundColor(Color(.systemGray))
+                                .foregroundStyle(buttonGradient)
                             
                             TextField("Search categories...", text: $searchText)
                                 .foregroundColor(ThemeColors.textPrimary)
@@ -34,7 +42,7 @@ struct HomeView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 15)
                                 .fill(Color(.systemBackground))
-                                .shadow(color: Color(.systemGray4).opacity(0.05), radius: 5, x: 0, y: 2)
+                                .shadow(color: ThemeColors.primary.opacity(0.1), radius: 5, x: 0, y: 2)
                         )
                         .padding(.horizontal)
                         
@@ -42,7 +50,7 @@ struct HomeView: View {
                             VStack(spacing: 16) {
                                 Image(systemName: "folder.badge.plus")
                                     .font(.system(size: 50))
-                                    .foregroundColor(ThemeColors.primary)
+                                    .foregroundStyle(buttonGradient)
                                 
                                 Text("No categories yet")
                                     .font(.title3)
@@ -77,7 +85,7 @@ struct HomeView: View {
                         Button(action: { showingAddCategory = true }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
-                                .foregroundColor(ThemeColors.primary)
+                                .foregroundStyle(buttonGradient)
                         }
                     }
                 }
@@ -95,11 +103,50 @@ struct HomeView: View {
     }
 }
 
+struct ColorSelectionCircle: View {
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 40, height: 40)
+            .overlay(
+                Circle()
+                    .stroke(Color(.systemBackground), lineWidth: 2)
+                    .padding(2)
+            )
+            .overlay(
+                Image(systemName: "checkmark")
+                    .foregroundColor(Color(.systemBackground))
+                    .opacity(isSelected ? 1 : 0)
+            )
+            .onTapGesture(perform: action)
+    }
+}
+
 struct AddCategoryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var categoryName = ""
     @State private var selectedColorIndex = 0
+    
+    private var buttonGradient: LinearGradient {
+        LinearGradient(
+            colors: [ThemeColors.primary, ThemeColors.accent],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+    
+    private var disabledGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.gray, Color.gray],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
     
     var body: some View {
         NavigationView {
@@ -113,23 +160,11 @@ struct AddCategoryView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(ThemeColors.categoryColors.indices, id: \.self) { index in
-                                let color = ThemeColors.categoryColors[index]
-                                Circle()
-                                    .fill(color)
-                                    .frame(width: 40, height: 40)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color(.systemBackground), lineWidth: 2)
-                                            .padding(2)
-                                    )
-                                    .overlay(
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(Color(.systemBackground))
-                                            .opacity(index == selectedColorIndex ? 1 : 0)
-                                    )
-                                    .onTapGesture {
-                                        selectedColorIndex = index
-                                    }
+                                ColorSelectionCircle(
+                                    color: ThemeColors.categoryColors[index],
+                                    isSelected: index == selectedColorIndex,
+                                    action: { selectedColorIndex = index }
+                                )
                             }
                         }
                         .padding(.vertical, 8)
@@ -138,11 +173,14 @@ struct AddCategoryView: View {
             }
             .navigationTitle("New Category")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(ThemeColors.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundStyle(buttonGradient)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
@@ -150,6 +188,7 @@ struct AddCategoryView: View {
                         dismiss()
                     }
                     .disabled(categoryName.isEmpty)
+                    .foregroundStyle(categoryName.isEmpty ? disabledGradient : buttonGradient)
                 }
             }
         }
