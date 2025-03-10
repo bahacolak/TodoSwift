@@ -73,10 +73,23 @@ struct HomeView: View {
                                 GridItem(.flexible(), spacing: 16)
                             ], spacing: 16) {
                                 ForEach(filteredCategories) { category in
-                                    CategoryCard(
-                                        category: category,
-                                        onDelete: { deleteCategory(category) }
-                                    )
+                                    if category.name == healthCategory.name && category.color == healthCategory.color {
+                                        NavigationLink(destination: HealthModuleView()) {
+                                            CategoryCard(
+                                                category: category,
+                                                onDelete: { deleteCategory(category) }
+                                            )
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    } else {
+                                        NavigationLink(destination: CategoryDetailView(category: category)) {
+                                            CategoryCard(
+                                                category: category,
+                                                onDelete: { deleteCategory(category) }
+                                            )
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
                                 }
                             }
                             .padding()

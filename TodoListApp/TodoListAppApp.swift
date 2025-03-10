@@ -6,10 +6,14 @@ struct TodoListAppApp: App {
     let container: ModelContainer
     
     init() {
+        // Request notification permission
+        NotificationManager.shared.requestAuthorization()
+        
         do {
             let schema = Schema([
                 Item.self,
-                Category.self
+                Category.self,
+                Medication.self
             ])
             
             let modelConfiguration = ModelConfiguration(
