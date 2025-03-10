@@ -19,26 +19,35 @@ struct CategoryDetailView: View {
             ThemeColors.background
                 .ignoresSafeArea()
             
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    if category.items?.isEmpty ?? true {
-                        Text("No tasks yet")
-                            .foregroundColor(ThemeColors.textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 20)
-                    } else {
-                        ForEach(category.items ?? []) { item in
-                            TaskRow(item: item, onDelete: { itemToDelete in
-                                withAnimation {
-                                    deleteItem(itemToDelete)
+            List {
+                if category.items?.isEmpty ?? true {
+                    Text("No tasks yet")
+                        .foregroundColor(ThemeColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 20)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                } else {
+                    ForEach(category.items ?? []) { item in
+                        TaskRow(item: item)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        deleteItem(item)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
-                            })
-                            .padding(.horizontal, 16)
-                        }
+                                .tint(.red)
+                            }
                     }
                 }
-                .padding(.vertical, 8)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle(category.name)
         .toolbarBackground(ThemeColors.background, for: .navigationBar)
@@ -68,9 +77,7 @@ struct CategoryDetailView: View {
 
 struct TaskRow: View {
     let item: Item
-    let onDelete: (Item) -> Void
     @State private var isCompleted: Bool
-    @State private var offset: CGFloat = 0
     @Environment(\.modelContext) private var modelContext
     
     private var buttonGradient: LinearGradient {
@@ -81,24 +88,14 @@ struct TaskRow: View {
         )
     }
     
-    init(item: Item, onDelete: @escaping (Item) -> Void) {
+    init(item: Item) {
         self.item = item
-        self.onDelete = onDelete
         _isCompleted = State(initialValue: item.isCompleted)
     }
     
     var body: some View {
         ZStack {
-            Color.red
-                .cornerRadius(16)
-            
-            HStack {
-                Spacer()
-                Image(systemName: "trash")
-                    .foregroundColor(.white)
-                    .padding(.trailing, 25)
-            }
-            
+            // Main content
             HStack(spacing: 12) {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(buttonGradient)
@@ -132,26 +129,8 @@ struct TaskRow: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
             .background(ThemeColors.surface)
-            .cornerRadius(16)
-            .offset(x: offset)
-            .gesture(
-                DragGesture()
-                    .onChanged { gesture in
-                        if gesture.translation.width < 0 {
-                            offset = gesture.translation.width
-                        }
-                    }
-                    .onEnded { gesture in
-                        withAnimation {
-                            if gesture.translation.width < -100 {
-                                onDelete(item)
-                            } else {
-                                offset = 0
-                            }
-                        }
-                    }
-            )
         }
+        .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
         .opacity(isCompleted ? 0.8 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isCompleted)
