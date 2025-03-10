@@ -7,6 +7,9 @@ struct HomeView: View {
     @State private var searchText = ""
     @Binding var showingAddCategory: Bool
     
+    // Static Health Category
+    private let healthCategory = Category(name: "Health", color: "#FF6B6B")
+    
     private var buttonGradient: LinearGradient {
         LinearGradient(
             colors: [ThemeColors.primary, ThemeColors.accent],
@@ -16,10 +19,11 @@ struct HomeView: View {
     }
     
     var filteredCategories: [Category] {
+        let allCategories = [healthCategory] + categories
         if searchText.isEmpty {
-            return categories
+            return allCategories
         }
-        return categories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return allCategories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
     
     var body: some View {
@@ -85,6 +89,11 @@ struct HomeView: View {
     }
     
     private func deleteCategory(_ category: Category) {
+        // Prevent deletion of static Health category
+        if category.name == healthCategory.name && category.color == healthCategory.color {
+            return
+        }
+        
         withAnimation {
             modelContext.delete(category)
         }
